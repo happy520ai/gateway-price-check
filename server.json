@@ -2,14 +2,20 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.happy520ai/gateway-price-check",
   "title": "Gateway Price Disclosure Check",
-  "description": "Answers one question about any OpenAI-compatible endpoint: can you see its model prices without an account or key? Sends a single unauthenticated GET /v1/models and returns one of five verdicts (YES / NO / AUTH / ERR / UNKNOWN) that keep \"publishes no prices\" separate from \"the probe could not read it\". https-only, refuses loopback and private hosts, never sends a key or a completion request, and never asserts model fidelity.",
+  "description": "Checks whether an OpenAI-compatible endpoint publishes model prices without an account or key.",
   "repository": {
     "url": "https://github.com/happy520ai/gateway-price-check",
     "source": "github"
   },
-  "version": "0.5.3",
+  "version": "0.5.4",
   "license": "MIT",
-  "keywords": ["pricing-transparency", "openai-compatible", "ai-gateway", "read-only", "no-api-key"],
+  "keywords": [
+    "pricing-transparency",
+    "openai-compatible",
+    "ai-gateway",
+    "read-only",
+    "no-api-key"
+  ],
   "packages": [
     {
       "registryType": "mcpb",

@@ -72,6 +72,7 @@ jobs:
             const want = process.env.GITHUB_REF_NAME.replace(/^v/, "");
             if (doc.version !== want) throw new Error("REFUSED: server.json version=" + doc.version + " 而 tag 是 " + want);
             const s = JSON.stringify(doc, null, 2) + "\n";
+            if (doc.description.length > 100) throw new Error("REFUSED: description " + doc.description.length + " 字符，注册表上限 100");
             if (s.includes("__MCPB_")) throw new Error("REFUSED: 占位符没被替换，不发");
             fs.writeFileSync("server.json", s);
             console.log("server.json ->", p.identifier, p.fileSha256.slice(0, 12) + "…");

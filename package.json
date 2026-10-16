@@ -4,7 +4,8 @@
   "description": "Does an OpenAI-compatible endpoint disclose model prices without an account or key? One unauthenticated GET, five-way verdict.",
   "type": "module",
   "bin": {
-    "gateway-price-check": "src/cli.mjs"
+    "gateway-price-check": "src/cli.mjs",
+    "gateway-price-check-mcp": "src/mcp-server.mjs"
   },
   "exports": {
     ".": "./src/probe.mjs"
@@ -12,14 +13,16 @@
   "files": [
     "src/",
     "results/latest.json",
+    "results/history/",
     "results/latest.svg",
     "RESULTS.md",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "check": "node src/cli.mjs",
     "test": "node --test",
-    "prepublishOnly": "node --check src/cli.mjs && node --check src/probe.mjs && node --check src/to-markdown.mjs && node --check src/to-svg.mjs && node --test"
+    "prepublishOnly": "node --check src/cli.mjs && node --check src/probe.mjs && node --check src/mcp-server.mjs && node --check src/to-markdown.mjs && node --check src/to-svg.mjs && node --test"
   },
   "engines": {
     "node": ">=18"

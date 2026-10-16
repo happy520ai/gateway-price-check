@@ -81,6 +81,34 @@ node src/cli.mjs --url https://your-gateway.example/v1 --name mine
 一个只会数 `prompt`/`price` 的探针会报"0 条带价"，那是**探针瞎了**，不是服务商不透明。
 部分不认识时判 `YES` 并在判词里报出未解析条数与键名（Vercel 那 60 条就是这么露出来的）。
 
+## 给 AI 助手用：MCP 服务端（stdio）
+
+同一个测量，另一个入口。宿主是语言模型时，"能不能看价格"这个问题就变成它可以自己回答的事：
+
+```json
+{
+  "mcpServers": {
+    "gateway-price-check": {
+      "command": "npx",
+      "args": ["-y", "--package", "github:happy520ai/gateway-price-check", "gateway-price-check-mcp"]
+    }
+  }
+}
+```
+
+两把工具：
+
+- `check_price_disclosure(url, name?)` → 一次无鉴权 `GET /v1/models`，返回 `YES`/`NO`/`AUTH`/`ERR`/`UNKNOWN` + 条目数/带价数。**内部就是 fork 一份 `src/cli.mjs`**，所以 MCP 读数、CLI 读数、CI 归档读数出自同一条代码路径——两台仪器只有共享同一份声明时才算互证，共享同一段实现时才算不打架。
+- `latest_archive_readings(date?)` → 读仓库里已归档的每日横评（默认今天，可给 `YYYY-MM-DD`）。
+
+三条设计约束，都是这个入口特有的：
+
+1. **它只准走 https，且默认拒绝环回/私网/链路本地/元数据地址。** 宿主可能被页面内容牵着走，一个"帮我探探这个端点"的请求不该变成对内网的任意请求。确实要在内网自测就显式设 `GPC_ALLOW_INSECURE=1`。
+2. **`ERR`/`UNKNOWN` 不是服务商的判决，是探针的**——`initialize` 的 `instructions` 里就把这句写死，免得模型转述成"它不透明"。
+3. **协议层错误与工具层失败分开**：未知方法 `-32601`、未知工具/坏参数 `-32602`、被拒绝的 URL `-32600`；真跑但读不出结果才走 `isError`。这样宿主能区分"你没资格问"和"这个问题现在没答案"。
+
+`test/mcp.test.mjs` 真起子进程做 stdio 握手（9 条离线臂 + 1 条联网臂，CI 两个 OS 都开 `GPC_LIVE_TESTS=1`）。其中"通知不许有回包"那条自带正对照：先证明抓得到没人等的回包，再断言通知没有——否则那是一条空断言。
+
 ## 在 CI 里跑（composite GitHub Action）
 
 不用装东西，也不用写脚本：把 `uses` 指到 release tag，一次无鉴权 GET 就进你的流水线。

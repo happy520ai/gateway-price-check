@@ -1,0 +1,25 @@
+{
+  "as_of": "2026-10-17",
+  "as_of_tz": "UTC+08:00",
+  "as_of_utc": "2026-10-16T22:58:23.991Z",
+  "note": "全部为无鉴权 GET；本工具不发送任何对话请求，因此不评估模型保真度。",
+  "results": [
+    {
+      "name": "OpenCSG",
+      "url": "https://ai.space.opencsg.com/v1/models",
+      "ms": 193,
+      "level": "YES",
+      "verdict": "21/23 条公布价格（91%） · 带显式币种字段 · 含缓存价 · 含上游仓库标识",
+      "total": 23,
+      "listShape": true,
+      "inputPriced": 18,
+      "anyPriced": 21,
+      "hasPricing": 21,
+      "cache": 12,
+      "currency": 21,
+      "upstream": 13,
+      "pricedButUnparsed": 0,
+      "unrecognizedKeys": []
+    }
+  ]
+}

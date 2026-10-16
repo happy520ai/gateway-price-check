@@ -22,6 +22,12 @@ jobs:
           node-version: '22'
       - name: Unit tests (incl. the two must-fail arms)
         run: node --test
+      # MCP 服务端要真握手才算存在：这条在两个 OS 上各起一次子进程，
+      # 打开 GPC_LIVE_TESTS 后连"经 MCP 得到的判词"也一起吃真端点。
+      - name: MCP stdio handshake (live arms enabled)
+        env:
+          GPC_LIVE_TESTS: '1'
+        run: node --test test/mcp.test.mjs
       # 在 Linux 与 Windows 上各跑一次真端点：
       # 之前那个 libuv 退出断言只在 Windows 复现，单平台 CI 抓不到。
       # 这一步原先是 `node src/cli.mjs` 直接看退出码，要求 11 家全部可判。

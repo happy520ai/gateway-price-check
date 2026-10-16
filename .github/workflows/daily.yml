@@ -29,6 +29,9 @@ jobs:
         run: |
           mkdir -p results
           node src/cli.mjs --json > results/latest.json
+          # 图先于页：RESULTS.md 里那个 ![](results/latest.svg) 必须指向本次刚生成的图，
+          # 否则页面引用的是上一天的图，图文打架正好是这套东西要防的事。
+          node src/to-svg.mjs results/latest.json
           node src/to-markdown.mjs results/latest.json > /dev/null
 
       - name: Commit generated readings

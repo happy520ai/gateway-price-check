@@ -15,15 +15,21 @@ node src/cli.mjs
 node src/cli.mjs --url https://your-gateway.example/v1 --name mine
 ```
 
-示例输出（2026-10-17 UTC+08:00 实测，11 个端点各一次无鉴权 GET）。
-**每日自动重跑的最新版在 [RESULTS.md](RESULTS.md)**，机器生成；下面这张是同一天的手工核对快照，
-两者若不一致，以 [RESULTS.md](RESULTS.md) 为准（手抄的数字会在端点变动当天变成假话）。
+![各家免登录公布价格的横评图](results/latest.svg)
+
+下表与上面这张图都由 CI 从 `results/latest.json` 重写（`<!--READINGS:-->` 之间是机器区，手改会在下一次
+每日跑批时被覆盖——覆盖不是 bug，是因为手抄的数字会在端点变动当天变成假话，而这张页面上的数字是给别人引用的）。
+最新一次读数见 [RESULTS.md](RESULTS.md)。
+
+<!--READINGS:BEGIN-->
 
 | 判词 | 家数 | 是谁 |
 |---|---|---|
-| `YES` 免登录就公布价格 | **3** | OpenRouter 466/466 · Vercel AI Gateway 457/471 · OpenCSG 21/23 |
-| `NO` 清单公开但一个价都不标 | **1** | NVIDIA NIM（81 个模型 id，无任何价格字段） |
-| `AUTH` 不注册连清单都看不到（401） | **7** | OpenAI · DeepSeek · 硅基流动 · 阿里百炼 · 火山方舟 · 智谱 · MiniMax |
+| `YES` 免登录就公布价格 | **3** | OpenCSG 21/23 · OpenRouter 466/466 · Vercel AI Gateway 457/471 |
+| `NO` 清单公开但一个价都不标 | **1** | NVIDIA NIM 0/81 |
+| `AUTH` 不注册连清单都看不到（401） | **7** | OpenAI · DeepSeek · SiliconFlow 硅基流动 · Alibaba DashScope 百炼 · Volcengine Ark 火山方舟 · Zhipu 智谱 · MiniMax |
+
+<!--READINGS:END-->
 
 三条读数：
 

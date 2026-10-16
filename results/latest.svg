@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 548" width="960" height="548" role="img" font-family="system-ui,-apple-system,'Segoe UI','Microsoft YaHei',sans-serif">
+<title>11 家模型网关：注册之前谁能看到价格</title>
+<desc>读数由 CI 每日生成于 2026-10-17（UTC+08:00）。每家一次无鉴权 GET /v1/models。公布价格 3 家，清单公开但零价格 1 家，需 key 才能读清单 7 家。</desc>
+<rect width="960" height="548" fill="#0b0d10"/>
+<rect width="960" height="6" fill="#4ee1a0"/>
+<text x="40" y="40" fill="#eceef3" font-size="24" font-weight="700">11 家模型网关：注册之前，谁能看到价格？</text>
+<text x="40" y="63" fill="#96a0af" font-size="13">每家一次无鉴权 GET /v1/models　·　CI 每日重跑，非手抄　·　2026-10-17 UTC+08:00</text>
+<text x="40" y="100" fill="#eceef3" font-size="16" font-weight="600">Vercel AI Gateway</text>
+<rect x="340" y="85" width="484" height="20" rx="6" fill="#12161c" stroke="#242c36"/>
+<rect x="340" y="85" width="469.6" height="20" rx="6" fill="#4ee1a0"/>
+<text x="836" y="100" fill="#4ee1a0" font-size="15" font-weight="700">457/471</text>
+<text x="40" y="134" fill="#eceef3" font-size="16" font-weight="600">OpenRouter</text>
+<rect x="340" y="119" width="484" height="20" rx="6" fill="#12161c" stroke="#242c36"/>
+<rect x="340" y="119" width="484.0" height="20" rx="6" fill="#4ee1a0"/>
+<text x="836" y="134" fill="#4ee1a0" font-size="15" font-weight="700">466/466</text>
+<text x="40" y="168" fill="#eceef3" font-size="16" font-weight="600">OpenCSG</text>
+<rect x="340" y="153" width="484" height="20" rx="6" fill="#12161c" stroke="#242c36"/>
+<rect x="340" y="153" width="441.9" height="20" rx="6" fill="#4ee1a0"/>
+<text x="836" y="168" fill="#4ee1a0" font-size="15" font-weight="700">21/23</text>
+<text x="40" y="202" fill="#eceef3" font-size="16" font-weight="600">NVIDIA NIM</text>
+<rect x="340" y="187" width="484" height="20" rx="6" fill="#12161c" stroke="#242c36"/>
+<text x="836" y="202" fill="#ffb454" font-size="15" font-weight="700">0/81</text>
+<text x="40" y="236" fill="#eceef3" font-size="16" font-weight="600">OpenAI</text>
+<rect x="340" y="221" width="484" height="20" rx="6" fill="#12161c" stroke="#242c36"/>
+<text x="836" y="236" fill="#788294" font-size="15" font-weight="700">401</text>
+<text x="40" y="270" fill="#eceef3" font-size="16" font-weight="600">DeepSeek</text>
+<rect x="340" y="255" width="484" height="20" rx="6" fill="#12161c" stroke="#242c36"/>
+<text x="836" y="270" fill="#788294" font-size="15" font-weight="700">401</text>
+<text x="40" y="304" fill="#eceef3" font-size="16" font-weight="600">SiliconFlow 硅基流动</text>
+<rect x="340" y="289" width="484" height="20" rx="6" fill="#12161c" stroke="#242c36"/>
+<text x="836" y="304" fill="#788294" font-size="15" font-weight="700">401</text>
+<text x="40" y="338" fill="#eceef3" font-size="16" font-weight="600">Alibaba DashScope 百炼</text>
+<rect x="340" y="323" width="484" height="20" rx="6" fill="#12161c" stroke="#242c36"/>
+<text x="836" y="338" fill="#788294" font-size="15" font-weight="700">401</text>
+<text x="40" y="372" fill="#eceef3" font-size="16" font-weight="600">Volcengine Ark 火山方舟</text>
+<rect x="340" y="357" width="484" height="20" rx="6" fill="#12161c" stroke="#242c36"/>
+<text x="836" y="372" fill="#788294" font-size="15" font-weight="700">401</text>
+<text x="40" y="406" fill="#eceef3" font-size="16" font-weight="600">Zhipu 智谱</text>
+<rect x="340" y="391" width="484" height="20" rx="6" fill="#12161c" stroke="#242c36"/>
+<text x="836" y="406" fill="#788294" font-size="15" font-weight="700">401</text>
+<text x="40" y="440" fill="#eceef3" font-size="16" font-weight="600">MiniMax</text>
+<rect x="340" y="425" width="484" height="20" rx="6" fill="#12161c" stroke="#242c36"/>
+<text x="836" y="440" fill="#788294" font-size="15" font-weight="700">401</text>
+<line x1="40" y1="460" x2="920" y2="460" stroke="#242c36" stroke-width="2"/>
+<text x="40" y="478" fill="#4ee1a0" font-size="13">● 3 家 · 免登录公布价格</text>
+<text x="218.05" y="478" fill="#ffb454" font-size="13">● 1 家 · 清单公开 · 零价格</text>
+<text x="417.55" y="478" fill="#788294" font-size="13">● 7 家 · 401 · 不注册看不到清单</text>
+<text x="40" y="508" fill="#ffb454" font-size="12.5">这张图只回答「公布了什么」，不回答「给的是不是真权重」——不发送任何对话请求。</text>
+<text x="40" y="528" fill="#96a0af" font-size="12.5">重放：node src/cli.mjs　·　原始读数：results/latest.json　·　8 家在注册之前不给你看价格</text>
+</svg>

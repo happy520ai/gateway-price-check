@@ -10,6 +10,8 @@ const raw = process.argv[2];
 if (!raw) { console.error('用法：node src/cli.mjs --json | node src/to-markdown.mjs <out.json>'); process.exit(1); }
 const doc = JSON.parse(readFileSync(raw, 'utf8'));
 
+const LABEL = { YES: '免登录就公布价格', NO: '清单公开但一个价都不标', AUTH: '不注册连清单都看不到（401）' };
+
 const rows = doc.results.map(r =>
   `| ${r.name} | ${r.total ?? '—'} | ${r.hasPricing != null ? r.hasPricing + '/' + r.total : '—'} | ${r.cache ?? '—'} | ${r.currency ?? '—'} | ${r.verdict} |`);
 
@@ -21,8 +23,11 @@ const counts = doc.results.reduce((a, r) => {
 
 const md = `# 免登录价格披露 · 每日自动读数
 
+![各家免登录公布价格的横评图](results/latest.svg)
+
 生成时间：${doc.as_of}（${doc.as_of_tz ?? '未标注时区'}）　方式：每个端点**一次无鉴权 GET**，不发送任何对话请求。
 本页由 CI 每日重写，请勿手工编辑（手抄的数字会在端点变动的当天变成假话）。
+上面那张图同源于本页表格、由同一份 \`latest.json\` 生成，所以图文不许互相打架。
 
 | 服务商 | 模型数 | 公布价格 | 含缓存价 | 显式币种 | 判词 |
 |---|---|---|---|---|---|
@@ -42,5 +47,33 @@ ${rows.join('\n')}
 `;
 
 const out = fileURLToPath(new URL('../RESULTS.md', import.meta.url));
+
+// README 上那张表此前是手抄的——正是本仓库反复声明要避免的那件事。
+// 现在它和 RESULTS.md 同源。标记缺失时必须吵：静默跳过等于"守卫没接上线"。
+const BEGIN = '<!--READINGS:BEGIN';
+const END = '<!--READINGS:END-->';
+const readmePath = fileURLToPath(new URL('../README.md', import.meta.url));
+const readme = readFileSync(readmePath, 'utf8');
+const b = readme.indexOf(BEGIN), e = readme.indexOf(END);
+if (b < 0 || e < 0 || e < b) {
+  console.error('REFUSED: README.md 里找不到 READINGS 标记区间 —— 不静默跳过');
+  process.exit(1);
+}
+const NL = String.fromCharCode(10);
+const lines = ['| 判词 | 家数 | 是谁 |', '|---|---|---|'];
+for (const lvl of ['YES', 'NO', 'AUTH']) {
+  const hit = doc.results.filter(r => r.level === lvl);
+  const who = hit.map(r => (r.total ? r.name + ' ' + r.hasPricing + '/' + r.total : r.name)).join(' · ') || '—';
+  lines.push('| `' + lvl + '` ' + LABEL[lvl] + ' | **' + hit.length + '** | ' + who + ' |');
+}
+const other = doc.results.filter(r => !['YES', 'NO', 'AUTH'].includes(r.level));
+if (other.length) {
+  lines.push('| 不可判（`' + other.map(r => r.level).join('`/`') + '`） | ' + other.length +
+    ' | ' + other.map(r => r.name).join(' · ') + ' —— 这些家数不许并进上面三档的结论 |');
+}
+const tallyMd = lines.join(NL);
+const next = readme.slice(0, b) + BEGIN + '-->' + NL + NL + tallyMd + NL + NL + readme.slice(e);
+if (next !== readme) writeFileSync(readmePath, next);
+
 writeFileSync(out, md);
 console.log(md);

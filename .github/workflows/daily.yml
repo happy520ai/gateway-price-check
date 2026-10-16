@@ -12,6 +12,10 @@ permissions:
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    # runner 默认 UTC，会写出 "2026-10-16 (UTC+00:00)"，而推广站点那侧的页面按北京时间写
+    # "2026-10-17"。两个产物同指一个瞬间却标不同日历日，读者只会以为有一个错了。
+    env:
+      TZ: Asia/Shanghai
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

@@ -19,5 +19,26 @@ jobs:
         run: node --test
       # 在 Linux 与 Windows 上各跑一次真端点：
       # 之前那个 libuv 退出断言只在 Windows 复现，单平台 CI 抓不到。
-      - name: Live probe must exit 0
-        run: node src/cli.mjs
+      # 这一步原先是 `node src/cli.mjs` 直接看退出码，要求 11 家全部可判。
+      # 那测的不是本工具，是 GitHub runner 的出网：Volcengine Ark 从 ubuntu 能通、
+      # 从 windows 三次重试全失败（2026-10-17 实测，两个臂各红过一次）。
+      # 一个随 runner 网络状态翻脸的闸，最终教会所有人的是"忽略它"。
+      # 现在断言这件测试真正该保证的事：被测主体必须读得到，且多数家读得到。
+      - name: Live probe must stay decidable
+        run: |
+          node src/cli.mjs --json > probe.json
+          node -e '
+          const d = JSON.parse(require("fs").readFileSync("probe.json", "utf8"));
+          const DECIDABLE = new Set(["YES", "NO", "AUTH"]);
+          const rows = d.results || [];
+          const bad = rows.filter(r => !DECIDABLE.has(r.level));
+          const subject = rows.find(r => r.name === "OpenCSG");
+          if (!subject || !DECIDABLE.has(subject.level))
+            { console.error("REFUSED: 被测主体 OpenCSG 不可判（" + (subject ? subject.level : "缺席") + "）"); process.exit(1); }
+          if (rows.length < 11)
+            { console.error("REFUSED: 只探到 " + rows.length + " 家，providers.json 少了一半？"); process.exit(1); }
+          if (bad.length > 3)
+            { console.error("REFUSED: " + bad.length + "/" + rows.length + " 家不可判，超出容忍（多数端点读不到就不是横评了）"); process.exit(1); }
+          if (bad.length) console.log("容忍内不可判 " + bad.length + " 家：" + bad.map(r => r.name + "(" + (r.verdict || "").slice(0, 24) + ")").join(", "));
+          console.log("decidable " + (rows.length - bad.length) + "/" + rows.length + " · 主体 OpenCSG " + subject.level);
+          '

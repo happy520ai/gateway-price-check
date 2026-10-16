@@ -28,7 +28,16 @@ jobs:
       - name: Probe live endpoints
         run: |
           mkdir -p results
+          # CLI 对"有不可判项"返回非 0（这是它该有的信号）。但在这里如果让它直接中断本步，
+          # 后面生成 svg / 重写 README / 提交 全被跳过——2026-10-17 真机就这样：
+          # 一家网关从 GitHub 机房连不通（3 次重试全失败），于是整条每日链停更一天，
+          # 而我新加的判定脚本根本没机会运行。判定权交给 assert-decidable，这里只如实记下退码。
+          set +e
           node src/cli.mjs --json > results/latest.json
+          probe_rc=$?
+          set -e
+          echo "cli exit=$probe_rc（1=有不可判项 · 2=有未解析的价格键）"
+          if [ ! -s results/latest.json ]; then echo "REFUSED: latest.json 是空的"; exit 1; fi
           # 图先于页：RESULTS.md 里那个 ![](results/latest.svg) 必须指向本次刚生成的图，
           # 否则页面引用的是上一天的图，图文打架正好是这套东西要防的事。
           node src/to-svg.mjs results/latest.json

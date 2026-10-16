@@ -31,5 +31,9 @@ jobs:
       # 现在断言这件测试真正该保证的事：被测主体必须读得到，且多数家读得到。
       - name: Live probe must stay decidable
         run: |
+          # 不让 CLI 的退码直接中断本步，否则判定脚本没机会跑（详见 daily.yml 同处注释）。
+          set +e
           node src/cli.mjs --json > probe.json
+          echo "cli exit=$?"
+          set -e
           node scripts/assert-decidable.mjs probe.json

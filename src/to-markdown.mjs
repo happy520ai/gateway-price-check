@@ -75,5 +75,30 @@ const tallyMd = lines.join(NL);
 const next = readme.slice(0, b) + BEGIN + '-->' + NL + NL + tallyMd + NL + NL + readme.slice(e);
 if (next !== readme) writeFileSync(readmePath, next);
 
+// README 表格下面那"三条读数"是散文，而 test/readme-claims.test.mjs 逐句钉着它。
+// 只生成表格不生成散文，后果是：CI 先拿散文对着**旧**读数验通过，再写入**新**读数，
+// 于是从那天起每天都是红的——一个永久红的 job 和没有 job 一样，只是更吵。
+// 所以能被推导出来的散文数字，一律由这里改写，不留给人手。
+const after = readFileSync(readmePath, 'utf8');
+const yes = (doc.results || []).filter(r => r.level === 'YES');
+const nOf = name => (doc.results || []).find(r => r.name === name);
+const CN = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
+const cn = k => (k <= 10 ? CN[k] : String(k));
+const or = nOf('OpenRouter'), cs = nOf('OpenCSG'), nv = nOf('NVIDIA NIM');
+const pct = Math.round((yes.length / doc.results.length) * 100);
+const rel = Math.round((or?.total ?? 0) / (cs?.total ?? 1));
+let prose = after;
+prose = prose.replace(/(\d+) 家里只有 (\d+) 家免登录就给价格（\d+%）/g,
+  () => `${doc.results.length} 家里只有 ${yes.length} 家免登录就给价格（${pct}%）`);
+prose = prose.replace(/[一二三四五六七八九十]+家一线与国产原厂连清单都要 key/g,
+  () => `${cn((doc.results || []).filter(r => r.level === 'AUTH').length)}家一线与国产原厂连清单都要 key`);
+prose = prose.replace(/[一二三四五六七八九十]+家里只有 OpenCSG 的价格对象带显式/g,
+  () => `${cn(yes.length)}家里只有 OpenCSG 的价格对象带显式`);
+if (or?.total) prose = prose.replace(/透明度上 OpenRouter 是 \d+\/\d+/g, () => `透明度上 OpenRouter 是 ${or.hasPricing}/${or.total}`);
+if (or?.total && cs?.total) prose = prose.replace(/（\d+\/\d+ 带价 vs \d+\/\d+）/g, () => `（${or.hasPricing}/${or.total} 带价 vs ${cs.hasPricing}/${cs.total}）`);
+if (nv?.total) prose = prose.replace(/NVIDIA NIM（\d+ 个模型 id/g, () => `NVIDIA NIM（${nv.total} 个模型 id`);
+prose = prose.replace(/目录大 \d+ 倍/g, () => `目录大 ${rel} 倍`);
+if (prose !== after) writeFileSync(readmePath, prose);
+
 writeFileSync(out, md);
 console.log(md);

@@ -22,9 +22,6 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Unit tests
-        run: node --test
-
       - name: Probe live endpoints
         run: |
           mkdir -p results
@@ -34,12 +31,19 @@ jobs:
           node src/to-svg.mjs results/latest.json
           node src/to-markdown.mjs results/latest.json > /dev/null
 
+      # 测试必须排在生成之后。原先它排在探测之前，于是发生这件事：
+      # CI 先把 README 里"OpenRouter 是 466/466"这类断言对着**旧**读数验一遍（通过），
+      # 再写入**新**读数，然后提交——把一条已经和 README 正文矛盾的快照推上线，
+      # 而这条矛盾要等下一次运行才变红。生成后再测，才能当天就拦住。
+      - name: Unit tests (against the freshly generated artifacts)
+        run: node --test
+
       - name: Commit generated readings
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if [[ -n "$(git status --porcelain results/ RESULTS.md)" ]]; then
-            git add results/ RESULTS.md
+          if [[ -n "$(git status --porcelain results/ RESULTS.md README.md)" ]]; then
+            git add results/ RESULTS.md README.md
             git commit -m "data: daily transparency readings"
             git push
           else

@@ -1,0 +1,3 @@
+# 有一条测试拿 latest.svg 与"从 latest.json 重新生成"的结果做逐字节比对。
+# 换行符若被 checkout 改写，这条断言就会随操作系统变红——那是假红。
+* text=auto eol=lf

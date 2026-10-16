@@ -1,0 +1,59 @@
+name: verify-registry
+
+# 注册表的读回面索引很慢（实测滞后 13 分钟以上），发布作业里不该等它。
+# 这条每日作业就是那个"等"：滞后超过一天才红——红的意思是"我的条目没跟上最新一次发布"，
+# 而不是"外部索引今天慢"。
+on:
+  schedule:
+    - cron: '23 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Registry version must catch up with the newest release within 24h
+        run: |
+          set -euo pipefail
+          tag=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
+          [ -n "$tag" ] || { echo "REFUSED: 仓库里没有语义化版本 tag"; exit 1; }
+          age_h=$(node -e '
+            const { execFileSync } = require("child_process");
+            const t = execFileSync("git", ["log", "-1", "--format=%ct", process.argv[1]], { encoding: "utf8" }).trim();
+            process.stdout.write(String((Date.now() / 1000 - Number(t)) / 3600));
+          ' "$tag")
+          expect=$(node -e '
+            const fs = require("fs");
+            const doc = JSON.parse(fs.readFileSync("server.json", "utf8"));
+            process.stdout.write(doc.version);
+          ')
+          export GPC_TAG="$tag" GPC_EXPECT="$expect" GPC_AGE="$age_h"
+          got=$(curl -sS "https://registry.modelcontextprotocol.io/v0/servers?search=gateway-price" | node -e '
+            let s = ""; process.stdin.on("data", d => s += d).on("end", () => {
+              const j = JSON.parse(s);
+              const x = (j.servers || []).map(y => y.server).find(z => z.name === "io.github.happy520ai/gateway-price-check");
+              if (!x) throw new Error("注册表搜索里没有这个条目（它曾经有过，不该静默消失）");
+              process.stdout.write(x.version);
+            });
+          ')
+          export GPC_GOT="$got"
+          echo "latest tag=$tag (age ${age_h}h) server.json=$expect registry=$got"
+          node -e '
+            const [a, b] = [process.env.GPC_EXPECT, process.env.GPC_GOT].map(v => v.split(".").map(Number));
+            const older = a[0] < b[0] || (a[0] === b[0] && (a[1] < b[1] || (a[1] === b[1] && a[2] < b[2])));
+            if (older) throw new Error("REFUSED: 注册表版本 " + process.env.GPC_GOT + " 比 server.json 的 " + process.env.GPC_EXPECT + " 还新？说明条目指向别的来源");
+            const same = process.env.GPC_EXPECT === process.env.GPC_GOT;
+            if (same) { console.log("一致"); process.exit(0); }
+            if (Number(process.env.GPC_AGE) > 24) {
+              console.error("REFUSED: 距最新 tag 已 " + Math.round(Number(process.env.GPC_AGE)) + " 小时，注册表仍停在 " + process.env.GPC_GOT);
+              process.exit(1);
+            }
+            console.log("仍在 24h 索引窗口内（tag 年龄 " + Math.round(Number(process.env.GPC_AGE)) + " 小时），本次不判失败");
+          '

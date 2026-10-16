@@ -104,48 +104,42 @@ jobs:
           ./mcp-publisher validate
           ./mcp-publisher publish
 
-      # 发完必须从注册表自己读回来：受理不等于在册，在册不等于版本对，
-      # 版本对不等于那条 sha 还指向真实服务端上的字节。
-      # 上一版这条臂本身写错过两次：拿 tag 名 "v0.5.4" 去比注册表的 "0.5.4"，
-      # 又用了不存在的 /api/v1/servers 路径（正解是 /v0/servers?search=）。
+      # 注册表自己的读回面（只有 /v0/servers?search=）索引很慢：v0.5.6 的 publish 明确回了
+      # "✓ Successfully published version 0.5.6"，而 13 分钟后 search 仍是 0.5.4。
+      # 所以这里只断言**当下就能验**的三件事（在册、形状对、sha 对得上真字节），
+      # 版本相等交给 verify-registry.yml 的每日核对（滞后超一天才红）。
+      # 把"外部索引延迟"写成我的失败，或写成我的成功，都是假判据。
       - name: Read the server back out of the registry
         run: |
           set -euo pipefail
-          want="${GITHUB_REF_NAME#v}"
-          # 注册表只有 search 这一个读回面，而它是异步索引的：刚 publish 完的 30~90 秒里
-          # search 仍可能返回上一个版本（v0.5.5 那次就是这么"红"的，实际条目已在）。
-          # 所以轮询到上限再断言——终点仍然是硬断言，只是不把索引延迟读成发布失败。
-          got=""
-          for i in $(seq 1 16); do
-            body=$(curl -sS "https://registry.modelcontextprotocol.io/v0/servers?search=gateway-price" || true)
-            printf '%s' "$body" > reg.json
-            got=$(node -e '
-              const fs = require("fs");
-              try {
-                const j = JSON.parse(fs.readFileSync("reg.json", "utf8"));
-                const s = (j.servers || []).map(x => x.server).find(x => x.name === "io.github.happy520ai/gateway-price-check");
-                process.stdout.write(s ? s.version : "");
-              } catch (e) { process.stdout.write(""); }
-            ')
-            echo "attempt $i: registry says '${got:-（无条目）}'，想要 '$want'"
-            [ "$got" = "$want" ] && break
-            sleep 15
-          done
-          [ "$got" = "$want" ] || { echo "REFUSED: 轮询 4 分钟后注册表仍是 $got（不是索引延迟的话就是发布没生效）"; exit 1; }
+          body=$(curl -sS "https://registry.modelcontextprotocol.io/v0/servers?search=gateway-price")
+          printf '%s' "$body" > reg.json
           node -e '
             const fs = require("fs");
             const j = JSON.parse(fs.readFileSync("reg.json", "utf8"));
             const s = (j.servers || []).map(x => x.server).find(x => x.name === "io.github.happy520ai/gateway-price-check");
-            if (s.version !== process.env.GPC_WANT.replace(/^v/, ""))
-              throw new Error("REFUSED: 竞态——刚才还匹配，现在版本是 " + s.version);
+            if (!s) throw new Error("REFUSED: 注册表搜索里根本没有这个条目");
             const p = (s.packages || [])[0];
             if (!p || p.registryType !== "mcpb") throw new Error("REFUSED: 条目里没有 mcpb 包项");
             if (!String(p.identifier).includes("mcp")) throw new Error("REFUSED: identifier 里没有 mcp");
             if (!/^[0-9a-f]{64}$/.test(p.fileSha256 || "")) throw new Error("REFUSED: fileSha256 形状不对");
             fs.writeFileSync("asset-url.txt", p.identifier);
             fs.writeFileSync("want-sha.txt", p.fileSha256);
-            console.log("在册 version=" + s.version + " transport=" + p.transport.type);
+            console.log("在册（索引版本 " + s.version + "，本次推的是 " + process.env.GPC_REF + "）");
           '
+          url=$(cat asset-url.txt)
+          served=$(curl -sSL "$url" | sha256sum | cut -d' ' -f1)
+          echo "served=$served"
+          [ "$served" = "$(cat want-sha.txt)" ] || { echo "REFUSED: 注册表指向的 sha 与服务端真字节不一致"; exit 1; }
+          echo "REGISTRY READBACK OK: 条目在册，且它宣称的 sha 就是现在能下载到的那串字节"
+        env:
+          GPC_REF: ${{ github.ref_name }}
+
+      # 版本是否已在读回面上生效，交给每日核对作业；这里只留一条肉眼可读的提示。
+      - name: Note the index lag
+        run: |
+          echo "注册表索引通常滞后数分钟到数小时；verify-registry.yml 每天核对："
+          echo "  GET /v0/servers?search=gateway-price 的 version 应 >= 最新 release 的 server.json.version"
           # 最后一道：注册表声称的 sha，必须等于此刻从公开 URL 真能下下来的那串字节。
           url=$(cat asset-url.txt)
           served=$(curl -sSL "$url" | sha256sum | cut -d' ' -f1)

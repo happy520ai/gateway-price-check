@@ -1,0 +1,23 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Unit tests (incl. the two must-fail arms)
+        run: node --test
+      # 在 Linux 与 Windows 上各跑一次真端点：
+      # 之前那个 libuv 退出断言只在 Windows 复现，单平台 CI 抓不到。
+      - name: Live probe must exit 0
+        run: node src/cli.mjs

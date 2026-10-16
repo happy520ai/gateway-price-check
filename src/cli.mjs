@@ -5,7 +5,7 @@
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { measurePayload, verdict, isRetryable } from './probe.mjs';
+import { measurePayload, verdict, isRetryable, normalizeModelsUrl } from './probe.mjs';
 
 const TIMEOUT_MS = 25_000;
 
@@ -20,7 +20,8 @@ function parseArgs(argv) {
       if (!url) { console.error('--url 后面缺值'); process.exit(1); }
       let host;
       try { host = new URL(url).hostname; } catch { console.error('--url 不是合法 URL：' + url); process.exit(1); }
-      targets.push({ name: host, url });
+      const resolved = normalizeModelsUrl(url);
+      targets.push({ name: host, url: resolved, requestedUrl: url });
     } else if (a === '--name') {
       if (!targets.length) { console.error('--name 必须跟在 --url 之后'); process.exit(1); }
       targets[targets.length - 1].name = argv[++i];
@@ -81,6 +82,7 @@ if (!targets.length) { console.error('没有可测端点'); process.exit(1); }
 const results = [];
 for (const t of targets) {
   process.stderr.write('探测 ' + t.name + ' … ');
+  if (t.requestedUrl && t.requestedUrl !== t.url) process.stderr.write('[按 OpenAI 兼容约定补全为 ' + t.url + '] ');
   const r = await probe(t);
   const v = verdict(r.measure);
   process.stderr.write(v.level + ' (' + r.ms + 'ms)\n');

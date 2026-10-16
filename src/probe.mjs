@@ -66,6 +66,18 @@ const AUTH_RE = /HTTP 40[13]\b/;
 // 只有传输层抖动值得重试。把 401/404 也重试一遍，等于用三次失败换一次"读到了"，
 // 那正是本工具存在的理由（把"我没读到"和"它没价格"分开）的反面。
 const TRANSPORT_RE = /fetch failed|aborted|ECONN|ETIMEDOUT|EAI_AGAIN|socket hang up|terminated|network/i;
+// 接受用户手里的 base_url（`.../v1`），而不只是完整清单地址（`.../v1/models`）。
+// 猜错的后果是 ERR（吵），不是假 YES（骗），所以这条归一化是安全的；
+// 但猜了就要说出来，所以 CLI 会把最终地址印出来。
+export function normalizeModelsUrl(raw) {
+  const u = new URL(raw);
+  let p = u.pathname.replace(/\/+$/, '');
+  if (/\/models(\?|$)/.test(p)) return u.href;
+  if (p === '' || p === '/') p = '/v1';
+  u.pathname = p + '/models';
+  return u.href;
+}
+
 export function isRetryable(msg) {
   return TRANSPORT_RE.test(String(msg || ''));
 }

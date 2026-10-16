@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { measurePayload, verdict, isRetryable } from '../src/probe.mjs';
+import { measurePayload, verdict, isRetryable, normalizeModelsUrl } from '../src/probe.mjs';
 
 // 两类形状，取自两个真实端点的响应结构（字段名原样保留）
 const CSG = {
@@ -141,4 +141,25 @@ test('空/异常输入不许被当成"可重试"而静默吞掉', () => {
   for (const v of [undefined, null, '', 0]) {
     assert.equal(isRetryable(v), false, `空值被判成可重试：${String(v)}`);
   }
+});
+
+// --url 接受 base_url 是本工具对外承诺的写法（README/发布说明都这么写）。
+// 它此前会返回 ERR——也就是说每一条文档里的示例命令都是跑不通的。
+test('base_url 补全为 OpenAI 兼容清单地址', () => {
+  assert.equal(normalizeModelsUrl('https://ai.space.opencsg.com/v1'), 'https://ai.space.opencsg.com/v1/models');
+  assert.equal(normalizeModelsUrl('https://api.deepseek.com'), 'https://api.deepseek.com/v1/models');
+  assert.equal(normalizeModelsUrl('https://x.com/v1/'), 'https://x.com/v1/models');
+});
+
+test('已经是完整清单地址时不许再动（重复补全会造出 /models/models）', () => {
+  for (const u of ['https://ai.space.opencsg.com/v1/models', 'https://openrouter.ai/api/v1/models']) {
+    assert.equal(normalizeModelsUrl(u), u, '不该改的被改了：' + u);
+  }
+});
+
+test('猜错只会得到 ERR（吵），不会得到假 YES（骗）', () => {
+  // 一个必然不存在的路径：归一化后应得到不可判，而不是"没有价格"。
+  const v = measurePayload({ data: [] });
+  assert.equal(v.error, 'data[] 为空：探针看不见东西，不能报"没有价格"');
+  assert.equal(verdict(v).level, 'ERR');
 });

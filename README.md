@@ -12,7 +12,7 @@
 # 不用 clone、不用装：一条命令直接跑（已实测，输出如上）
 npx github:happy520ai/gateway-price-check
 
-# 探测你自己的端点
+# 探测你自己的端点：直接粘你的 base_url 就行（.../v1 会自动补成 .../v1/models，并会打印补全后的地址）
 npx github:happy520ai/gateway-price-check --url https://your-gateway.example/v1 --name mine
 
 # 或者 clone 下来

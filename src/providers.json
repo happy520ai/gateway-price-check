@@ -1,10 +1,27 @@
 [
   {
     "name": "OpenCSG",
-    "url": "https://ai.space.opencsg.com/v1/models"
+    "url": "https://ai.space.opencsg.com/v1/models",
+    "doc": "https://opencsg.com"
   },
   {
     "name": "OpenRouter",
-    "url": "https://openrouter.ai/api/v1/models"
+    "url": "https://openrouter.ai/api/v1/models",
+    "doc": "https://openrouter.ai/docs/api-reference/list-available-models"
+  },
+  {
+    "name": "Vercel AI Gateway",
+    "url": "https://ai-gateway.vercel.sh/v1/models",
+    "doc": "https://vercel.com/docs/ai-gateway/sdks-and-apis/openai-chat-completions"
+  },
+  {
+    "name": "OpenAI",
+    "url": "https://api.openai.com/v1/models",
+    "doc": "https://platform.openai.com/docs/api-reference/models/list"
+  },
+  {
+    "name": "DeepSeek",
+    "url": "https://api.deepseek.com/models",
+    "doc": "https://api-docs.deepseek.com/"
   }
 ]

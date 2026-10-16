@@ -58,6 +58,58 @@ test('未知价格字段名 => UNKNOWN，并列出没认出的键', () => {
   assert.equal(verdict(m).level, 'UNKNOWN');
 });
 
+// 必中靶 3：401/403 是答案，不是探针失灵；而 404 仍然必须是"不可判"。
+// 两条一起测，才排除"把所有错误都归成一档"这种偷懒实现。
+test('HTTP 401 => AUTH（免登录看不到，即为否）', () => {
+  const v = verdict({ error: 'HTTP 401' });
+  assert.equal(v.level, 'AUTH');
+  assert.doesNotMatch(v.text, /不可判/);
+});
+
+test('HTTP 403 => AUTH；HTTP 404 仍是 ERR（两者不许混）', () => {
+  assert.equal(verdict({ error: 'HTTP 403' }).level, 'AUTH');
+  assert.equal(verdict({ error: 'HTTP 404' }).level, 'ERR');
+  assert.equal(verdict({ error: 'fetch failed' }).level, 'ERR');
+});
+
+// 真机回归靶：2026-10-17 实测 Vercel AI Gateway 用 input/output 当价格键，
+// 旧词表把 471 条全带价的清单判成"0 带价 + UNKNOWN"。这条用例锁住扩表结果。
+test('Vercel 形状（input/output 键）=> 认出带价，不落 UNKNOWN', () => {
+  const v = {
+    object: 'list',
+    data: [
+      { id: 'anthropic/claude-opus-5', pricing: { input: '5', output: '25', input_cache_read: '0.5', varies_by_provider: true } },
+      { id: 'openai/gpt-5.5', pricing: { input: '1.25', output: '10' } },
+    ],
+  };
+  const m = measurePayload(v);
+  assert.equal(m.anyPriced, 2);
+  assert.equal(m.pricedButUnparsed, 0, '不许再有认不出来的键');
+  assert.equal(m.cache, 1);
+  assert.equal(verdict(m).level, 'YES');
+});
+
+// 混合形状：主张成立（确实公布了价格）但词表没读全 —— 未读部分必须在判词里
+// 报出来，不许静默丢。这是"否定结论不许靠看不见"的正面版本。
+test('部分键不认识 => YES 但判词必须带未读条数', () => {
+  const mixed = {
+    object: 'list',
+    data: [
+      { id: 'a', pricing: { prompt: 1, completion: 2 } },
+      { id: 'b', pricing: { video_duration_pricing: { s: 1 } } },
+    ],
+  };
+  const m = measurePayload(mixed);
+  assert.equal(m.hasPricing, 2);
+  assert.equal(m.anyPriced, 1);
+  assert.equal(m.pricedButUnparsed, 1);
+  const v = verdict(m);
+  assert.equal(v.level, 'YES');
+  assert.match(v.text, /2\/2 条公布价格/);
+  assert.match(v.text, /1 条的价格键不在词表内/);
+  assert.match(v.text, /video_duration_pricing/);
+});
+
 test('确实没有 pricing 对象 => NO（与"读不到"区分开）', () => {
   const m = measurePayload({ object: 'list', data: [{ id: 'a' }, { id: 'b' }] });
   assert.equal(m.pricedButUnparsed, 0);

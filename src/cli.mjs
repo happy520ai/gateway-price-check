@@ -75,12 +75,12 @@ if (json) {
     results: results.map(r => ({ name: r.name, url: r.url, ms: r.ms, level: r.verdict.level, verdict: r.verdict.text, ...(!r.measure.error ? r.measure : {}) })),
   }, null, 2));
 } else {
-  console.log('| 服务商 | 模型数 | 带价 | 含缓存价 | 显式币种 | 上游标识 | 判词 |');
+  console.log('| 服务商 | 模型数 | 公布价格 | 含缓存价 | 显式币种 | 上游标识 | 判词 |');
   console.log('|---|---|---|---|---|---|---|');
   for (const r of results) {
     const m = r.measure;
     const c = k => (m.error ? '—' : m[k]);
-    console.log(`| ${r.name} | ${c('total')} | ${m.error ? '—' : m.anyPriced + '/' + m.total} | ${c('cache')} | ${c('currency')} | ${c('upstream')} | ${r.verdict.text} |`);
+    console.log(`| ${r.name} | ${c('total')} | ${m.error ? '—' : m.hasPricing + '/' + m.total} | ${c('cache')} | ${c('currency')} | ${c('upstream')} | ${r.verdict.text} |`);
   }
   console.log('\n判词只回答"免登录时公布了什么"，不回答"给的是不是真权重"。');
 }

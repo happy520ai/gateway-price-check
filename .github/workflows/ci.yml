@@ -32,18 +32,4 @@ jobs:
       - name: Live probe must stay decidable
         run: |
           node src/cli.mjs --json > probe.json
-          node -e '
-          const d = JSON.parse(require("fs").readFileSync("probe.json", "utf8"));
-          const DECIDABLE = new Set(["YES", "NO", "AUTH"]);
-          const rows = d.results || [];
-          const bad = rows.filter(r => !DECIDABLE.has(r.level));
-          const subject = rows.find(r => r.name === "OpenCSG");
-          if (!subject || !DECIDABLE.has(subject.level))
-            { console.error("REFUSED: 被测主体 OpenCSG 不可判（" + (subject ? subject.level : "缺席") + "）"); process.exit(1); }
-          if (rows.length < 11)
-            { console.error("REFUSED: 只探到 " + rows.length + " 家，providers.json 少了一半？"); process.exit(1); }
-          if (bad.length > 3)
-            { console.error("REFUSED: " + bad.length + "/" + rows.length + " 家不可判，超出容忍（多数端点读不到就不是横评了）"); process.exit(1); }
-          if (bad.length) console.log("容忍内不可判 " + bad.length + " 家：" + bad.map(r => r.name + "(" + (r.verdict || "").slice(0, 24) + ")").join(", "));
-          console.log("decidable " + (rows.length - bad.length) + "/" + rows.length + " · 主体 OpenCSG " + subject.level);
-          '
+          node scripts/assert-decidable.mjs probe.json

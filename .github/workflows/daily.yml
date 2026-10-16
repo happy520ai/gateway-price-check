@@ -55,12 +55,8 @@ jobs:
 
       # 一家都读不到时，README 里那张表就成了无来源的数字——这时必须吵。
       # 全 AUTH 不算失败：那本身就是有效读数。
-      - name: Fail loudly if every probe came back unreadable
-        run: |
-          node -e '
-          const d = JSON.parse(require("fs").readFileSync("results/latest.json", "utf8"));
-          const levels = d.results.map(r => r.level);
-          const usable = levels.filter(l => l === "YES" || l === "NO" || l === "AUTH").length;
-          console.log("levels:", levels.join(", "), "| usable:", usable + "/" + levels.length);
-          if (usable === 0) { console.error("REFUSED: 没有任何一家给出可用读数，README 表格已失去来源"); process.exit(1); }
-          '
+      # 与 ci.yml 共用同一个判定脚本，规则只有一份定义。
+      # 原先这里只问 usable===0（只要还剩一家能读就算好），比 CI 那条松得多——
+      # 同一件事在两个 job 里标准不同，松的那个就会成为实际生效的那个。
+      - name: Assert the daily readings are still a usable comparison
+        run: node scripts/assert-decidable.mjs results/latest.json

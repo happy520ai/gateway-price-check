@@ -1,5 +1,8 @@
 # gateway-price-check
 
+[![ci](https://github.com/happy520ai/gateway-price-check/actions/workflows/ci.yml/badge.svg)](https://github.com/happy520ai/gateway-price-check/actions/workflows/ci.yml)
+[![daily-readings](https://github.com/happy520ai/gateway-price-check/actions/workflows/daily.yml/badge.svg)](https://github.com/happy520ai/gateway-price-check/actions/workflows/daily.yml)
+
 一个只读问题：**一个 OpenAI 兼容端点，在你没注册、没 key 的时候，愿不愿意把价格告诉你？**
 
 很多模型网关要先把账号建完、充完值，你才知道自己按什么单价付费。这个工具对任意端点发**一次无鉴权 GET**，
@@ -12,7 +15,9 @@ node src/cli.mjs
 node src/cli.mjs --url https://your-gateway.example/v1 --name mine
 ```
 
-示例输出（2026-10-17 实测，五个端点各一次无鉴权 GET）：
+示例输出（2026-10-17 UTC+08:00 实测，五个端点各一次无鉴权 GET）。
+**每日自动重跑的最新版在 [RESULTS.md](RESULTS.md)**，机器生成；下面这张是同一天的手工核对快照，
+两者若不一致，以 [RESULTS.md](RESULTS.md) 为准（手抄的数字会在端点变动当天变成假话，所以这张表不该被当作现状引用）。
 
 | 服务商 | 模型数 | 公布价格 | 含缓存价 | 显式币种 | 判词 |
 |---|---|---|---|---|---|

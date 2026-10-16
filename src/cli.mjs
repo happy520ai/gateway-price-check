@@ -68,9 +68,20 @@ for (const t of targets) {
   results.push({ ...r, verdict: v });
 }
 
+// 日期必须带时区：UTC 与北京时间会差一个日历日，只写"2026-10-16"会让读者以为
+// 另一份写"2026-10-17"的产物是错的。
+const now = new Date();
+const offsetMin = -now.getTimezoneOffset();
+const offsetLabel = 'UTC' + (offsetMin >= 0 ? '+' : '-') +
+  String(Math.floor(Math.abs(offsetMin) / 60)).padStart(2, '0') + ':' +
+  String(Math.abs(offsetMin) % 60).padStart(2, '0');
+const localDate = new Date(now.getTime() + offsetMin * 60000).toISOString().slice(0, 10);
+
 if (json) {
   console.log(JSON.stringify({
-    as_of: new Date().toISOString().slice(0, 10),
+    as_of: localDate,
+    as_of_tz: offsetLabel,
+    as_of_utc: now.toISOString(),
     note: '全部为无鉴权 GET；本工具不发送任何对话请求，因此不评估模型保真度。',
     results: results.map(r => ({ name: r.name, url: r.url, ms: r.ms, level: r.verdict.level, verdict: r.verdict.text, ...(!r.measure.error ? r.measure : {}) })),
   }, null, 2));

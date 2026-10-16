@@ -104,23 +104,37 @@ jobs:
           ./mcp-publisher validate
           ./mcp-publisher publish
 
-      # 发完必须从注册表自己读回来：202 只代表受理，条目在不在、版本对不对是另一件事。
+      # 发完必须从注册表自己读回来：受理不等于在册，在册不等于版本对，
+      # 版本对不等于那条 sha 还指向真实服务端上的字节。
+      # 上一版这条臂本身写错过两次：拿 tag 名 "v0.5.4" 去比注册表的 "0.5.4"，
+      # 又用了不存在的 /api/v1/servers 路径（正解是 /v0/servers?search=）。
       - name: Read the server back out of the registry
         run: |
           set -euo pipefail
           body=$(curl -sS --retry 4 --retry-delay 10 \
-            "https://registry.modelcontextprotocol.io/api/v1/servers/io.github.happy520ai/gateway-price-check")
-          echo "$body" | head -c 600
-          printf '%s' "$body" | node -e '
-            let s = ""; process.stdin.on("data", d => s += d).on("end", () => {
-              const j = JSON.parse(s);
-              const want = process.env.GPC_WANT;
-              const got = (j.server && j.server.version) || j.version;
-              if (got !== want) throw new Error("REFUSED: 注册表里的版本是 " + got + "，这次推的是 " + want);
-              const pk = (j.server && j.server.packages) || j.packages || [];
-              if (!pk.some(p => p.registryType === "mcpb")) throw new Error("REFUSED: 注册表里没有 mcpb 包项");
-              console.log("REGISTRY VERIFIED version=" + got);
-            });
+            "https://registry.modelcontextprotocol.io/v0/servers?search=gateway-price")
+          printf '%s' "$body" > reg.json
+          node -e '
+            const fs = require("fs");
+            const j = JSON.parse(fs.readFileSync("reg.json", "utf8"));
+            const list = (j.servers || []).map(x => x.server);
+            const s = list.find(x => x.name === "io.github.happy520ai/gateway-price-check");
+            if (!s) throw new Error("REFUSED: 注册表搜索结果里没有这个条目");
+            if (s.version !== process.env.GPC_WANT.replace(/^v/, ""))
+              throw new Error("REFUSED: 注册表里的版本是 " + s.version + "，这次推的是 " + process.env.GPC_WANT);
+            const p = (s.packages || [])[0];
+            if (!p || p.registryType !== "mcpb") throw new Error("REFUSED: 条目里没有 mcpb 包项");
+            if (!String(p.identifier).includes("mcp")) throw new Error("REFUSED: identifier 里没有 mcp");
+            if (!/^[0-9a-f]{64}$/.test(p.fileSha256 || "")) throw new Error("REFUSED: fileSha256 形状不对");
+            fs.writeFileSync("asset-url.txt", p.identifier);
+            fs.writeFileSync("want-sha.txt", p.fileSha256);
+            console.log("在册 version=" + s.version + " transport=" + p.transport.type);
           '
+          # 最后一道：注册表声称的 sha，必须等于此刻从公开 URL 真能下下来的那串字节。
+          url=$(cat asset-url.txt)
+          served=$(curl -sSL "$url" | sha256sum | cut -d' ' -f1)
+          echo "served=$served"
+          [ "$served" = "$(cat want-sha.txt)" ] || { echo "REFUSED: 注册表里的 sha 与服务端字节不一致（条目指向旧包）"; exit 1; }
+          echo "REGISTRY VERIFIED: 在册、版本对、sha 对得上真实字节"
         env:
           GPC_WANT: ${{ github.ref_name }}

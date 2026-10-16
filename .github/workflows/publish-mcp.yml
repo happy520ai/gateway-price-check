@@ -111,17 +111,33 @@ jobs:
       - name: Read the server back out of the registry
         run: |
           set -euo pipefail
-          body=$(curl -sS --retry 4 --retry-delay 10 \
-            "https://registry.modelcontextprotocol.io/v0/servers?search=gateway-price")
-          printf '%s' "$body" > reg.json
+          want="${GITHUB_REF_NAME#v}"
+          # 注册表只有 search 这一个读回面，而它是异步索引的：刚 publish 完的 30~90 秒里
+          # search 仍可能返回上一个版本（v0.5.5 那次就是这么"红"的，实际条目已在）。
+          # 所以轮询到上限再断言——终点仍然是硬断言，只是不把索引延迟读成发布失败。
+          got=""
+          for i in $(seq 1 16); do
+            body=$(curl -sS "https://registry.modelcontextprotocol.io/v0/servers?search=gateway-price" || true)
+            printf '%s' "$body" > reg.json
+            got=$(node -e '
+              const fs = require("fs");
+              try {
+                const j = JSON.parse(fs.readFileSync("reg.json", "utf8"));
+                const s = (j.servers || []).map(x => x.server).find(x => x.name === "io.github.happy520ai/gateway-price-check");
+                process.stdout.write(s ? s.version : "");
+              } catch (e) { process.stdout.write(""); }
+            ')
+            echo "attempt $i: registry says '${got:-（无条目）}'，想要 '$want'"
+            [ "$got" = "$want" ] && break
+            sleep 15
+          done
+          [ "$got" = "$want" ] || { echo "REFUSED: 轮询 4 分钟后注册表仍是 $got（不是索引延迟的话就是发布没生效）"; exit 1; }
           node -e '
             const fs = require("fs");
             const j = JSON.parse(fs.readFileSync("reg.json", "utf8"));
-            const list = (j.servers || []).map(x => x.server);
-            const s = list.find(x => x.name === "io.github.happy520ai/gateway-price-check");
-            if (!s) throw new Error("REFUSED: 注册表搜索结果里没有这个条目");
+            const s = (j.servers || []).map(x => x.server).find(x => x.name === "io.github.happy520ai/gateway-price-check");
             if (s.version !== process.env.GPC_WANT.replace(/^v/, ""))
-              throw new Error("REFUSED: 注册表里的版本是 " + s.version + "，这次推的是 " + process.env.GPC_WANT);
+              throw new Error("REFUSED: 竞态——刚才还匹配，现在版本是 " + s.version);
             const p = (s.packages || [])[0];
             if (!p || p.registryType !== "mcpb") throw new Error("REFUSED: 条目里没有 mcpb 包项");
             if (!String(p.identifier).includes("mcp")) throw new Error("REFUSED: identifier 里没有 mcp");

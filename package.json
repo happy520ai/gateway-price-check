@@ -1,6 +1,6 @@
 {
   "name": "gateway-price-check",
-  "version": "0.5.5",
+  "version": "0.5.6",
   "description": "Does an OpenAI-compatible endpoint disclose model prices without an account or key? One unauthenticated GET, five-way verdict.",
   "type": "module",
   "bin": {

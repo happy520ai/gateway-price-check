@@ -81,6 +81,24 @@ node src/cli.mjs --url https://your-gateway.example/v1 --name mine
 一个只会数 `prompt`/`price` 的探针会报"0 条带价"，那是**探针瞎了**，不是服务商不透明。
 部分不认识时判 `YES` 并在判词里报出未解析条数与键名（Vercel 那 60 条就是这么露出来的）。
 
+## 在 CI 里跑（composite GitHub Action）
+
+不用装东西，也不用写脚本：把 `uses` 指到 release tag，一次无鉴权 GET 就进你的流水线。
+
+```yaml
+- uses: happy520ai/gateway-price-check@v0.3.0
+  with:
+    url: https://ai.space.opencsg.com/v1   # …/v1 或完整 …/v1/models 都行
+    name: OpenCSG
+    fail-on: 'NO'                          # 只有"清单公开却零价格"默认让 CI 转红
+# outputs: verdict / total / priced / json
+```
+
+`fail-on` 默认是 `NO`，而 **`ERR`/`UNKNOWN` 默认不失败**——那两档说的是探针自己（网络不通、价格键长在词表外），把它们当"服务商不透明"会系统性低估行业的透明度。想让它们也拦，就显式写 `fail-on: 'NO,ERR,UNKNOWN'`。写进 `fail-on` 的词不在这五档内，action 会**拒绝执行**且不留下半截 outputs。
+
+能照抄的真跑例子（含一条"必须红"的臂，用来证明 `fail-on` 不是装饰）：
+[`.github/workflows/action-smoke.yml`](./.github/workflows/action-smoke.yml)。
+
 ## 自测
 
 ```bash

@@ -1,0 +1,76 @@
+name: 'Gateway price disclosure check'
+description: >
+  Sends one unauthenticated GET /v1/models to an OpenAI-compatible endpoint and
+  reports whether model prices are published before you sign up. Five verdicts,
+  and it refuses to merge "I could not read it" (ERR) with "it publishes no
+  prices" (NO).
+author: happy520ai
+branding:
+  icon: 'eye'
+  color: 'blue'
+inputs:
+  url:
+    description: 'Base URL (…/v1) or a full …/v1/models URL. No credential is ever sent.'
+    required: true
+  name:
+    description: 'Display name for the log line.'
+    required: false
+    default: 'target'
+  fail-on:
+    description: >
+      Comma-separated verdicts that should fail the step. ERR/UNKNOWN are not
+      failures by default: they are statements about the probe, not the vendor.
+    required: false
+    default: 'NO'
+outputs:
+  verdict:
+    description: 'YES | NO | AUTH | ERR | UNKNOWN'
+    value: ${{ steps.run.outputs.verdict }}
+  total:
+    description: 'Model objects returned (empty string when undecidable)'
+    value: ${{ steps.run.outputs.total }}
+  priced:
+    description: 'Models carrying a recognised price field'
+    value: ${{ steps.run.outputs.priced }}
+  json:
+    description: 'Full machine-readable reading as one-line JSON'
+    value: ${{ steps.run.outputs.json }}
+runs:
+  using: 'composite'
+  steps:
+    - id: run
+      shell: bash
+      env:
+        GPC_URL: ${{ inputs.url }}
+        GPC_NAME: ${{ inputs.name }}
+        GPC_FAIL_ON: ${{ inputs.fail-on }}
+      run: |
+        set -euo pipefail
+        GPC_EXIT=0
+        node "${{ github.action_path }}/src/cli.mjs" --url "$GPC_URL" --name "$GPC_NAME" --json > gpc.json 2> gpc.err || GPC_EXIT=$?
+        # CLI 的退出码本身是判词：0=读到且可判，1=有 ERR，2=有 UNKNOWN。
+        # 其它码才是不认识的形状 —— 不猜，直接拒绝。
+        case "$GPC_EXIT" in
+          0|1|2) ;;
+          *) echo "REFUSED: CLI 退出码 $GPC_EXIT，预期 0/1/2"; cat gpc.err; exit "$GPC_EXIT" ;;
+        esac
+        node -e '
+          const fs = require("fs");
+          const doc = JSON.parse(fs.readFileSync("gpc.json", "utf8"));
+          const rows = doc.results || [];
+          if (rows.length !== 1) throw new Error("REFUSED: action 目标应为 1 行，读到 " + rows.length);
+          const r = rows[0];
+          const LEVELS = ["YES", "NO", "AUTH", "ERR", "UNKNOWN"];
+          if (!LEVELS.includes(r.level)) throw new Error("REFUSED: 判词 " + JSON.stringify(r.level) + " 不在闭集内");
+          const ban = (process.env.GPC_FAIL_ON || "").split(",").map(s => s.trim()).filter(Boolean);
+          // 配置错误先于写输出：一条拒掉的 fail-on 不该留下半截 outputs 让下游 job 读到。
+          for (const b of ban) if (!LEVELS.includes(b)) throw new Error("REFUSED: fail-on 里有未知判词 " + b);
+          const out = fs.openSync(process.env.GITHUB_OUTPUT, "a");
+          fs.writeSync(out, "verdict=" + r.level + "\n");
+          fs.writeSync(out, "total=" + (r.total ?? "") + "\n");
+          fs.writeSync(out, "priced=" + (r.hasPricing ?? "") + "\n");
+          fs.writeSync(out, "json=" + JSON.stringify(r).replace(/\n/g, " ") + "\n");
+          console.log(r.name + " -> " + r.level + (r.total != null ? " (带价 " + (r.hasPricing ?? "-") + "/" + r.total + ")" : ""));
+          if (ban.includes(r.level)) { console.log("按 fail-on=" + ban.join(",") + " 判为失败"); process.exit(1); }
+          if (r.level === "ERR" || r.level === "UNKNOWN") console.log("提示：这一档说的是探针，不是服务商 —— 步骤仍按成功结束");
+        '

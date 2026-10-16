@@ -1,0 +1,65 @@
+name: action-smoke
+
+# 这个 workflow 有两个用途：给使用者一份能照抄的用法，以及让 action.yml 在真 runner 上
+# 被它自己的引用路径（release tag）跑一遍。两条臂都必须有下场：
+#   - OpenCSG 期望 YES；
+#   - NVIDIA 带 fail-on=NO，**必须**是 failure —— 它绿了就说明 fail-on 没生效，作业整体转红。
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - action.yml
+      - src/**
+      - .github/workflows/action-smoke.yml
+  schedule:
+    - cron: '17 3 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  yes-arm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: probe
+        uses: happy520ai/gateway-price-check@v0.3.0
+        with:
+          url: https://ai.space.opencsg.com/v1
+          name: OpenCSG
+          fail-on: 'NO'
+      - name: 断言判词与读数同时在场
+        env:
+          V: ${{ steps.probe.outputs.verdict }}
+          T: ${{ steps.probe.outputs.total }}
+          P: ${{ steps.probe.outputs.priced }}
+          J: ${{ steps.probe.outputs.json }}
+        run: |
+          set -euo pipefail
+          echo "verdict=$V total=$T priced=$P"
+          [ "$V" = "YES" ] || { echo "REFUSED: 期望 YES，读到 $V"; exit 1; }
+          [ -n "$T" ] || { echo "REFUSED: YES 却没有 total，输出绑定断了"; exit 1; }
+          echo "$J" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const r=JSON.parse(s);if(r.level!=="YES")throw new Error("json 输出里判词不是 YES："+r.level);console.log("json 输出可解析，name="+r.name);})'
+
+  must-fail-arm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: probe
+        uses: happy520ai/gateway-price-check@v0.3.0
+        continue-on-error: true
+        with:
+          url: https://integrate.api.nvidia.com/v1
+          name: NVIDIA
+          fail-on: 'NO'
+      - name: 这一臂必须红
+        env:
+          V: ${{ steps.probe.outputs.verdict }}
+          OUTCOME: ${{ steps.probe.outcome }}
+        run: |
+          set -euo pipefail
+          echo "outcome=$OUTCOME verdict=$V"
+          [ "$V" = "NO" ] || { echo "REFUSED: 世界变了（判词 $V），请改判据而不是放宽它"; exit 1; }
+          [ "$OUTCOME" = "failure" ] || { echo "REFUSED: fail-on=NO 却没让步骤转红 —— 闸门是装饰"; exit 1; }
+          echo "OK: fail-on 生效，NO 被判为失败"

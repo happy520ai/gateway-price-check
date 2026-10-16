@@ -1,14 +1,51 @@
 {
   "name": "gateway-price-check",
   "version": "0.1.0",
-  "description": "Does an OpenAI-compatible endpoint disclose model prices without an account or key?",
+  "description": "Does an OpenAI-compatible endpoint disclose model prices without an account or key? One unauthenticated GET, five-way verdict.",
   "type": "module",
-  "bin": { "gateway-price-check": "src/cli.mjs" },
+  "bin": {
+    "gateway-price-check": "src/cli.mjs"
+  },
+  "exports": {
+    ".": "./src/probe.mjs"
+  },
+  "files": [
+    "src/",
+    "results/latest.json",
+    "results/latest.svg",
+    "RESULTS.md",
+    "README.md"
+  ],
   "scripts": {
     "check": "node src/cli.mjs",
-    "test": "node --test"
+    "test": "node --test",
+    "prepublishOnly": "node --check src/cli.mjs && node --check src/probe.mjs && node --check src/to-markdown.mjs && node --check src/to-svg.mjs && node --test"
   },
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "license": "MIT",
-  "dependencies": {}
+  "dependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/happy520ai/gateway-price-check.git"
+  },
+  "homepage": "https://github.com/happy520ai/gateway-price-check#readme",
+  "bugs": {
+    "url": "https://github.com/happy520ai/gateway-price-check/issues"
+  },
+  "author": "happy520ai",
+  "keywords": [
+    "openai-compatible",
+    "ai-gateway",
+    "model-pricing",
+    "llm",
+    "pricing-transparency",
+    "cli",
+    "zero-dependency",
+    "openrouter",
+    "deepseek",
+    "opencsg",
+    "v1/models"
+  ]
 }

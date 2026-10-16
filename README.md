@@ -9,9 +9,14 @@
 然后报告它公开返回了什么：有没有价格、有没有币种字段、有没有缓存价、有没有告诉你每个模型 id 背后是哪份权重。
 
 ```bash
-node src/cli.mjs
+# 不用 clone、不用装：一条命令直接跑（已实测，输出如上）
+npx github:happy520ai/gateway-price-check
 
 # 探测你自己的端点
+npx github:happy520ai/gateway-price-check --url https://your-gateway.example/v1 --name mine
+
+# 或者 clone 下来
+node src/cli.mjs
 node src/cli.mjs --url https://your-gateway.example/v1 --name mine
 ```
 

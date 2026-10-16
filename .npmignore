@@ -1,0 +1,4 @@
+# 从 git 安装时 npm 会回落到 .gitignore 并打印一条警告，而这行警告会出现在
+# `npx github:...` 的用户可见输出里。显式给出排除清单，警告即消失。
+.github/
+test/

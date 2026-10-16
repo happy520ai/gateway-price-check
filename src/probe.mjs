@@ -63,6 +63,13 @@ export function measurePayload(payload) {
 // 401/403 是**答案**，不是探针失灵。把它算成"不可判"会系统性高估行业透明度。
 const AUTH_RE = /HTTP 40[13]\b/;
 
+// 只有传输层抖动值得重试。把 401/404 也重试一遍，等于用三次失败换一次"读到了"，
+// 那正是本工具存在的理由（把"我没读到"和"它没价格"分开）的反面。
+const TRANSPORT_RE = /fetch failed|aborted|ECONN|ETIMEDOUT|EAI_AGAIN|socket hang up|terminated|network/i;
+export function isRetryable(msg) {
+  return TRANSPORT_RE.test(String(msg || ''));
+}
+
 export function verdict(r) {
   if (r.error && AUTH_RE.test(r.error)) {
     return { level: 'AUTH', text: '需要 key 才能读清单（' + r.error + '）——对"免登录可见价格"这个问题，这就是否' };

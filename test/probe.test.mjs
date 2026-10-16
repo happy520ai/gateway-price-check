@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { measurePayload, verdict } from '../src/probe.mjs';
+import { measurePayload, verdict, isRetryable } from '../src/probe.mjs';
 
 // 两类形状，取自两个真实端点的响应结构（字段名原样保留）
 const CSG = {
@@ -120,4 +120,25 @@ test('不是清单形状 => ERR', () => {
   assert.ok(measurePayload({ models: [] }).error);
   assert.ok(measurePayload(null).error);
   assert.ok(measurePayload('nope').error);
+});
+
+// 重试判据的两个方向都要钉住：只测"该重试的会重试"，会把 401 也洗成读数。
+test('传输层抖动可重试（这些是真失灵，不是答案）', () => {
+  for (const msg of ['fetch failed', 'The operation was aborted', 'connect ECONNREFUSED 1.2.3.4:443',
+    'read ECONNRESET', 'getaddrinfo EAI_AGAIN api.example.com', 'socket hang up']) {
+    assert.equal(isRetryable(msg), true, `该重试却没重试：${msg}`);
+  }
+});
+
+test('HTTP 状态码与形状错误绝不重试（401 是答案，不是失灵）', () => {
+  for (const msg of ['HTTP 401', 'HTTP 403', 'HTTP 404', 'HTTP 500', '响应不是对象',
+    '没有 data[] 数组（不是 OpenAI 兼容的模型清单形状）', 'data[] 为空：探针看不见东西，不能报"没有价格"']) {
+    assert.equal(isRetryable(msg), false, `不该重试却重试了：${msg}`);
+  }
+});
+
+test('空/异常输入不许被当成"可重试"而静默吞掉', () => {
+  for (const v of [undefined, null, '', 0]) {
+    assert.equal(isRetryable(v), false, `空值被判成可重试：${String(v)}`);
+  }
 });

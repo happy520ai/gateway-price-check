@@ -5,7 +5,7 @@
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { measurePayload, verdict } from './probe.mjs';
+import { measurePayload, verdict, isRetryable } from './probe.mjs';
 
 const TIMEOUT_MS = 25_000;
 
@@ -36,22 +36,41 @@ function parseArgs(argv) {
   return { targets, json };
 }
 
-async function probe(t) {
+const RETRY_LIMIT = 2;
+
+async function attempt(url) {
   const started = Date.now();
   // 用可清除的定时器而不是 AbortSignal.timeout()：后者留下的 handle 会让
   // 进程退出时撞上 libuv 断言（Windows 实测 exit 127）。
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   try {
-    const res = await fetch(t.url, { method: 'GET', signal: ctrl.signal });
-    if (!res.ok) return { ...t, ms: Date.now() - started, measure: { error: 'HTTP ' + res.status } };
+    const res = await fetch(url, { method: 'GET', signal: ctrl.signal });
+    // 判词引擎读的是 measure.error。把错误放到别的字段上，401 就会变成"没测到"。
+    if (!res.ok) return { ms: Date.now() - started, measure: { error: 'HTTP ' + res.status }, retryable: false };
     const body = await res.json();
-    return { ...t, ms: Date.now() - started, measure: measurePayload(body) };
+    return { ms: Date.now() - started, measure: measurePayload(body) };
   } catch (e) {
-    return { ...t, ms: Date.now() - started, measure: { error: String(e?.message || e) } };
+    const msg = String(e?.message || e);
+    return { ms: Date.now() - started, measure: { error: msg }, retryable: isRetryable(msg) };
   } finally {
     clearTimeout(timer);
   }
+}
+
+async function probe(t) {
+  let tries = 0, last;
+  for (;;) {
+    last = await attempt(t.url);
+    // 只重试传输层抖动。401/404 是答案，不是失灵——重试它们会把"拒绝"洗成"读到了"。
+    if (!last.retryable || tries >= RETRY_LIMIT) break;
+    tries++;
+    process.stderr.write('(' + t.name + ' 传输失败，第 ' + (tries + 1) + '/' + (RETRY_LIMIT + 1) + ' 次尝试) ');
+    await new Promise(r => setTimeout(r, 400 * tries));
+  }
+  const { retryable, ...rest } = last;
+  if (tries) rest.measure = { ...(rest.measure || {}), attempts: tries + 1 };
+  return { ...t, ...rest };
 }
 
 const { targets: cli, json } = parseArgs(process.argv.slice(2));

@@ -1,0 +1,21 @@
+{
+  "manifest_version": "0.3",
+  "name": "gateway-price-check-mcp",
+  "version": "0.5.0",
+  "description": "Reports whether an OpenAI-compatible endpoint publishes model prices to someone with no account or key. One unauthenticated GET /v1/models; five verdicts keep \"publishes no prices\" separate from \"the probe could not read it\". Never sends a key or a completion request, so it does not assess model fidelity.",
+  "author": {
+    "name": "happy520ai"
+  },
+  "homepage": "https://github.com/happy520ai/gateway-price-check",
+  "license": "MIT",
+  "repository": "https://github.com/happy520ai/gateway-price-check",
+  "server": {
+    "type": "node",
+    "entry_point": "app/src/mcp-server.mjs",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/app/src/mcp-server.mjs"],
+      "env": {}
+    }
+  }
+}

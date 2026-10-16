@@ -1,0 +1,110 @@
+name: publish-mcp-registry
+
+# 只在版本 tag 上跑：包、server.json 里的 URL 与 sha、注册表里的版本号，
+# 三者必须由同一次运行生成 —— 手抄 sha 的注册表条目，第一次重打包就会指向旧字节。
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write      # 建 release 并上传 .mcpb
+  id-token: write      # 注册表 OIDC 所有权校验（不需要我登录，也不需要 PAT）
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Test before packaging (46+ arms incl. MCP stdio)
+        env:
+          GPC_LIVE_TESTS: '1'
+        run: node --test
+
+      - name: Build and self-verify the .mcpb bundle
+        id: bundle
+        run: |
+          set -euo pipefail
+          out=$(python3 scripts/build-mcpb.py)
+          echo "$out"
+          sha=$(printf '%s\n' "$out" | sed -n 's/^SHA256 //p')
+          [ -n "$sha" ] || { echo "REFUSED: 没算出 sha256"; exit 1; }
+          echo "sha256=$sha" >> "$GITHUB_OUTPUT"
+
+      - name: Publish the bundle as a release asset
+        id: asset
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          gh release create "$TAG" --verify-tag --title "$TAG" --notes "See the repository README; this tag's asset is the installable MCP bundle (gateway-price-check-mcp.mcpb)." 2>/dev/null || true
+          gh release upload "$TAG" dist/gateway-price-check-mcp.mcpb --clobber
+          url="https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/gateway-price-check-mcp.mcpb"
+          # 回读服务端：资产必须真的在 release 上，且 sha 与我们刚算的一致。
+          remote=$(curl -sL "$url" | sha256sum | cut -d' ' -f1)
+          if [ "$remote" != "${{ steps.bundle.outputs.sha256 }}" ]; then
+            echo "REFUSED: 下载回来的资产 sha=$remote ≠ 本地 ${{ steps.bundle.outputs.sha256 }}"; exit 1
+          fi
+          # 注册表要求 identifier 里含 "mcp"（文件名 .mcpb 满足）
+          case "$url" in *mcp*) ;; *) echo "REFUSED: URL 里没有 mcp，注册表不会放行"; exit 1;; esac
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Fill server.json from this run's artifact
+        run: |
+          set -euo pipefail
+          node -e '
+            const fs = require("fs");
+            const doc = JSON.parse(fs.readFileSync("server.json", "utf8"));
+            const [p] = doc.packages;
+            if (!p || p.registryType !== "mcpb") throw new Error("REFUSED: server.json 里没有 mcpb 包项");
+            p.identifier = process.env.GPC_URL;
+            p.fileSha256 = process.env.GPC_SHA;
+            const want = process.env.GITHUB_REF_NAME.replace(/^v/, "");
+            if (doc.version !== want) throw new Error("REFUSED: server.json version=" + doc.version + " 而 tag 是 " + want);
+            const s = JSON.stringify(doc, null, 2) + "\n";
+            if (s.includes("__MCPB_")) throw new Error("REFUSED: 占位符没被替换，不发");
+            fs.writeFileSync("server.json", s);
+            console.log("server.json ->", p.identifier, p.fileSha256.slice(0, 12) + "…");
+          '
+        env:
+          GPC_URL: ${{ steps.asset.outputs.url }}
+          GPC_SHA: ${{ steps.bundle.outputs.sha256 }}
+
+      - name: Install mcp-publisher
+        run: |
+          set -euo pipefail
+          curl -sSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_Linux_x86_64.tar.gz" | tar xz mcp-publisher
+          ./mcp-publisher --version || ./mcp-publisher version || true
+
+      - name: Authenticate to the MCP Registry via OIDC
+        run: ./mcp-publisher login github-oidc
+
+      - name: Validate then publish
+        run: |
+          set -euo pipefail
+          ./mcp-publisher validate
+          ./mcp-publisher publish
+
+      # 发完必须从注册表自己读回来：202 只代表受理，条目在不在、版本对不对是另一件事。
+      - name: Read the server back out of the registry
+        run: |
+          set -euo pipefail
+          body=$(curl -sS --retry 4 --retry-delay 10 \
+            "https://registry.modelcontextprotocol.io/api/v1/servers/io.github.happy520ai/gateway-price-check")
+          echo "$body" | head -c 600
+          printf '%s' "$body" | node -e '
+            let s = ""; process.stdin.on("data", d => s += d).on("end", () => {
+              const j = JSON.parse(s);
+              const want = process.env.GPC_WANT;
+              const got = (j.server && j.server.version) || j.version;
+              if (got !== want) throw new Error("REFUSED: 注册表里的版本是 " + got + "，这次推的是 " + want);
+              const pk = (j.server && j.server.packages) || j.packages || [];
+              if (!pk.some(p => p.registryType === "mcpb")) throw new Error("REFUSED: 注册表里没有 mcpb 包项");
+              console.log("REGISTRY VERIFIED version=" + got);
+            });
+          '
+        env:
+          GPC_WANT: ${{ github.ref_name }}

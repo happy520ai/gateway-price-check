@@ -7,7 +7,7 @@
     "url": "https://github.com/happy520ai/gateway-price-check",
     "source": "github"
   },
-  "version": "0.5.1",
+  "version": "0.5.2",
   "license": "MIT",
   "keywords": ["pricing-transparency", "openai-compatible", "ai-gateway", "read-only", "no-api-key"],
   "packages": [

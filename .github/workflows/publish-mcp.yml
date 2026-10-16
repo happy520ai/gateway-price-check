@@ -41,6 +41,9 @@ jobs:
 
       - name: Publish the bundle as a release asset
         id: asset
+        env:
+          # gh 在 workflow 里不读 GITHUB_TOKEN，只认 GH_TOKEN —— 上一次就是在这里退 4。
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           TAG="${GITHUB_REF_NAME}"

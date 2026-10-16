@@ -1,7 +1,7 @@
 {
   "manifest_version": "0.3",
   "name": "gateway-price-check-mcp",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Reports whether an OpenAI-compatible endpoint publishes model prices to someone with no account or key. One unauthenticated GET /v1/models; five verdicts keep \"publishes no prices\" separate from \"the probe could not read it\". Never sends a key or a completion request, so it does not assess model fidelity.",
   "author": {
     "name": "happy520ai"

@@ -15,6 +15,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # 有一条既有测试要 git rev-parse 结果包头部记的来源 commit；
+          # 默认 fetch-depth=1 时祖先根本不在树上（这坑在 ci.yml 里已经踩过一次）。
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:

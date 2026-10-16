@@ -83,8 +83,16 @@ jobs:
       - name: Install mcp-publisher
         run: |
           set -euo pipefail
-          curl -sSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_Linux_x86_64.tar.gz" | tar xz mcp-publisher
-          ./mcp-publisher --version || ./mcp-publisher version || true
+          # 资产名是小写 os + amd64/arm64：mcp-publisher_linux_amd64.tar.gz。
+          # 上一版写死 Linux_x86_64，拿回来的是 404 的 HTML，tar 报 "not in gzip format"。
+          os=$(uname -s | tr '[:upper:]' '[:lower:]')
+          arch=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')
+          url="https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_${os}_${arch}.tar.gz"
+          code=$(curl -sSL -o pub.tar.gz -w '%{http_code}' "$url")
+          [ "$code" = 200 ] || { echo "REFUSED: 下载 mcp-publisher 得到 HTTP $code（$url）"; exit 1; }
+          file pub.tar.gz | grep -q gzip || { echo "REFUSED: 下载回来的不是 gzip，不解压"; exit 1; }
+          tar xzf pub.tar.gz mcp-publisher
+          ./mcp-publisher --help >/dev/null || { echo "REFUSED: mcp-publisher 起不来"; exit 1; }
 
       - name: Authenticate to the MCP Registry via OIDC
         run: ./mcp-publisher login github-oidc

@@ -18,6 +18,9 @@ jobs:
       TZ: Asia/Shanghai
     steps:
       - uses: actions/checkout@v4
+        with:
+          # 同上：本 job 也跑 node --test，其中一条断言要解析祖先 commit。
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'

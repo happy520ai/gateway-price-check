@@ -12,6 +12,11 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
+        with:
+          # 有一条测试要 git rev-parse bundle 头部记录的来源 commit。
+          # checkout 默认 fetch-depth=1，祖先 commit 根本不在树上，
+          # 于是该断言在 CI 里必然以 unknown revision 失败（已在 depth=1 克隆里复现）。
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'

@@ -15,6 +15,11 @@
     "doc": "https://vercel.com/docs/ai-gateway/sdks-and-apis/openai-chat-completions"
   },
   {
+    "name": "NVIDIA NIM",
+    "url": "https://integrate.api.nvidia.com/v1/models",
+    "doc": "https://docs.nvidia.com/nim/large-language-models/latest/api-reference.html"
+  },
+  {
     "name": "OpenAI",
     "url": "https://api.openai.com/v1/models",
     "doc": "https://platform.openai.com/docs/api-reference/models/list"
@@ -23,5 +28,30 @@
     "name": "DeepSeek",
     "url": "https://api.deepseek.com/models",
     "doc": "https://api-docs.deepseek.com/"
+  },
+  {
+    "name": "SiliconFlow 硅基流动",
+    "url": "https://api.siliconflow.cn/v1/models",
+    "doc": "https://therouter.ai/zh/blog/openai-compatible-apis-china/"
+  },
+  {
+    "name": "Alibaba DashScope 百炼",
+    "url": "https://dashscope.aliyuncs.com/compatible-mode/v1/models",
+    "doc": "https://therouter.ai/zh/blog/openai-compatible-apis-china/"
+  },
+  {
+    "name": "Volcengine Ark 火山方舟",
+    "url": "https://ark.cn-beijing.volces.com/api/v3/models",
+    "doc": "https://therouter.ai/zh/blog/openai-compatible-apis-china/"
+  },
+  {
+    "name": "Zhipu 智谱",
+    "url": "https://open.bigmodel.cn/api/paas/v4/models",
+    "doc": "https://therouter.ai/zh/blog/openai-compatible-apis-china/"
+  },
+  {
+    "name": "MiniMax",
+    "url": "https://api.minimax.chat/v1/models",
+    "doc": "https://therouter.ai/zh/blog/openai-compatible-apis-china/"
   }
 ]

@@ -7,8 +7,8 @@
 <text x="40" y="63" fill="#96a0af" font-size="13">每家一次无鉴权 GET /v1/models　·　CI 每日重跑，非手抄　·　2026-10-17 UTC+08:00</text>
 <text x="40" y="100" fill="#eceef3" font-size="16" font-weight="600">Vercel AI Gateway</text>
 <rect x="340" y="85" width="484" height="20" rx="6" fill="#12161c" stroke="#242c36"/>
-<rect x="340" y="85" width="469.6" height="20" rx="6" fill="#4ee1a0"/>
-<text x="836" y="100" fill="#4ee1a0" font-size="15" font-weight="700">457/471</text>
+<rect x="340" y="85" width="469.7" height="20" rx="6" fill="#4ee1a0"/>
+<text x="836" y="100" fill="#4ee1a0" font-size="15" font-weight="700">459/473</text>
 <text x="40" y="134" fill="#eceef3" font-size="16" font-weight="600">OpenRouter</text>
 <rect x="340" y="119" width="484" height="20" rx="6" fill="#12161c" stroke="#242c36"/>
 <rect x="340" y="119" width="484.0" height="20" rx="6" fill="#4ee1a0"/>

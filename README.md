@@ -20,6 +20,10 @@ node src/cli.mjs
 node src/cli.mjs --url https://your-gateway.example/v1 --name mine
 ```
 
+单文件版（不用 clone、不用装依赖）放在 gist 里，由本仓库源码机械拼接生成，文件头写明生成自哪个 commit：
+[gist.github.com/happy520ai/5f5f2a95385ef185f51a42c04a99cc46](https://gist.github.com/happy520ai/5f5f2a95385ef185f51a42c04a99cc46)
+— 重新生成 `node make-gist-bundle.mjs`，查是否过期 `node make-gist-bundle.mjs --check`。
+
 ![各家免登录公布价格的横评图](results/latest.svg)
 
 下表与上面这张图都由 CI 从 `results/latest.json` 重写（`<!--READINGS:-->` 之间是机器区，手改会在下一次

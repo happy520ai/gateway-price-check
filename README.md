@@ -49,6 +49,14 @@ node src/cli.mjs --url https://your-gateway.example/v1 --name mine
 3. 三家里只有 OpenCSG 的价格对象带显式 `currency` 字段并按「元/百万 token」报。
    **这是单位可读性差异，不是透明度差异**——透明度上 OpenRouter 是 467/467，比它更高。
 
+## 引用这些数据
+
+`results/latest.json` 每天被覆盖，所以**不要**引用它来支撑一个带日期的说法——你点进去的时候它已经是别的日子了。
+带日期的读数在 [`results/history/`](results/history/)，一天一个文件，CI 每天追加，
+文件名与内容里的 `as_of` 由测试互锁（对不上就红），也不允许往回覆盖。
+
+引用格式建议：`gateway-price-check, reading of <as_of> (UTC+08:00), results/history/<as_of>.json`。
+
 ## 它刻意不做的事
 
 - **不发任何对话请求，因此不评估模型保真度。** 它只回答"公布了什么"，不回答"给的是不是真权重"。

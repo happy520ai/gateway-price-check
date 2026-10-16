@@ -43,6 +43,11 @@ jobs:
           node src/to-svg.mjs results/latest.json
           node src/to-markdown.mjs results/latest.json > /dev/null
 
+      # latest.json 每天被覆盖，于是「截至某日的说法」在 24 小时后就没有可核对的工件了。
+      # 归档一份按日期命名的副本，别人才可能引用、也才可能验证别人引用过。
+      - name: Archive the reading under its own date
+        run: node scripts/archive-reading.mjs results/latest.json
+
       # 测试必须排在生成之后。原先它排在探测之前，于是发生这件事：
       # CI 先把 README 里"OpenRouter 是 466/466"这类断言对着**旧**读数验一遍（通过），
       # 再写入**新**读数，然后提交——把一条已经和 README 正文矛盾的快照推上线，

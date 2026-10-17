@@ -1,8 +1,9 @@
 name: verify-registry
 
-# 注册表的读回面索引很慢（实测滞后 13 分钟以上），发布作业里不该等它。
-# 这条每日作业就是那个"等"：滞后超过一天才红——红的意思是"我的条目没跟上最新一次发布"，
-# 而不是"外部索引今天慢"。
+# 每日回读官方 MCP Registry。用权威路由 /v0/servers/<编码名>/versions，
+# 不用 ?search=（那是缓存：0.5.7 发布后一个多小时 search 仍返回 0.5.4，而权威路由当场就是 0.5.7）。
+# 这条作业管的是"回归"：条目消失、最新 tag 不在册、或它宣称的 sha 与真下载到的字节不符。
+
 on:
   schedule:
     - cron: '23 4 * * *'
@@ -19,41 +20,56 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Registry version must catch up with the newest release within 24h
+      - name: Newest release must be registered, and its sha must match served bytes
         run: |
           set -euo pipefail
           tag=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
           [ -n "$tag" ] || { echo "REFUSED: 仓库里没有语义化版本 tag"; exit 1; }
+          want="${tag#v}"
+          curl -sS "https://registry.modelcontextprotocol.io/v0/servers/io.github.happy520ai%2Fgateway-price-check/versions" > reg.json
+          export GPC_WANT="$want"
+          node -e '
+            const fs = require("fs");
+            const j = JSON.parse(fs.readFileSync("reg.json", "utf8"));
+            const vs = (j.servers || []).map(x => x.server || x).filter(Boolean);
+            if (vs.length === 0) throw new Error("REFUSED: 权威路由返回空——条目不见了或被重置（注册表在 preview，数据可能被清）");
+            const found = vs.find(v => v.version === process.env.GPC_WANT);
+            if (!found) throw new Error("REFUSED: 最新 tag " + process.env.GPC_WANT + " 不在册（在册：" + vs.map(v => v.version).join(",") + "）");
+            const p = (found.packages || [])[0];
+            if (!p || p.registryType !== "mcpb") throw new Error("REFUSED: 该版本没有 mcpb 包项");
+            fs.writeFileSync("asset-url.txt", p.identifier);
+            fs.writeFileSync("want-sha.txt", p.fileSha256);
+            console.log("在册 " + found.version + "，共 " + vs.length + " 个版本");
+          '
+          served=$(curl -sSL "$(cat asset-url.txt)" | sha256sum | cut -d' ' -f1)
+          echo "served=$served"
+          [ "$served" = "$(cat want-sha.txt)" ] || { echo "REFUSED: 注册表宣称的 sha 与此刻公开 URL 的字节不一致"; exit 1; }
+          echo "REGISTRY OK: 最新版本在册，包可下载且哈希对得上"
+
+      # 条目在客户端目录里能不能被搜到，是另一件事——用缓存面单独盯它，
+      # 红的意思是"索引没跟上"，不是"没发布"。两者不该混成一条判据。
+      - name: Search index has caught up (informational until 24h)
+        run: |
+          set -euo pipefail
+          # 步骤之间不共享 shell 变量，所以这里自己再取一次最新 tag。
+          tag=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
+          want="${tag#v}"
+          got=$(curl -sS "https://registry.modelcontextprotocol.io/v0/servers?search=gateway-price" | node -e '
+            let s = ""; process.stdin.on("data", d => s += d).on("end", () => {
+              const j = JSON.parse(s);
+              const x = (j.servers || []).map(y => y.server).find(z => (z.name || "").includes("gateway-price-check"));
+              process.stdout.write(x ? x.version : "");
+            });
+          ')
+          echo "search 面返回：${got:-（无结果）}，想要 $want"
+          if [ "$got" = "$want" ]; then echo "索引已跟上"; exit 0; fi
           age_h=$(node -e '
             const { execFileSync } = require("child_process");
             const t = execFileSync("git", ["log", "-1", "--format=%ct", process.argv[1]], { encoding: "utf8" }).trim();
             process.stdout.write(String((Date.now() / 1000 - Number(t)) / 3600));
           ' "$tag")
-          expect=$(node -e '
-            const fs = require("fs");
-            const doc = JSON.parse(fs.readFileSync("server.json", "utf8"));
-            process.stdout.write(doc.version);
-          ')
-          export GPC_TAG="$tag" GPC_EXPECT="$expect" GPC_AGE="$age_h"
-          got=$(curl -sS "https://registry.modelcontextprotocol.io/v0/servers?search=gateway-price" | node -e '
-            let s = ""; process.stdin.on("data", d => s += d).on("end", () => {
-              const j = JSON.parse(s);
-              const x = (j.servers || []).map(y => y.server).find(z => z.name === "io.github.happy520ai/gateway-price-check");
-              if (!x) throw new Error("注册表搜索里没有这个条目（它曾经有过，不该静默消失）");
-              process.stdout.write(x.version);
-            });
-          ')
-          export GPC_GOT="$got"
-          echo "latest tag=$tag (age ${age_h}h) server.json=$expect registry=$got"
-          node -e '
-            const [a, b] = [process.env.GPC_EXPECT, process.env.GPC_GOT].map(v => v.split(".").map(Number));
-            const older = a[0] < b[0] || (a[0] === b[0] && (a[1] < b[1] || (a[1] === b[1] && a[2] < b[2])));
-            if (older) throw new Error("REFUSED: 注册表版本 " + process.env.GPC_GOT + " 比 server.json 的 " + process.env.GPC_EXPECT + " 还新？说明条目指向别的来源");
-            const same = process.env.GPC_EXPECT === process.env.GPC_GOT;
-            if (same) { console.log("一致"); process.exit(0); }
-            if (Number(process.env.GPC_AGE) > 24) {
-              console.error("REFUSED: 距最新 tag 已 " + Math.round(Number(process.env.GPC_AGE)) + " 小时，注册表仍停在 " + process.env.GPC_GOT);
-              process.exit(1);
-            }
-            console.log("仍在 24h 索引窗口内（tag 年龄 " + Math.round(Number(process.env.GPC_AGE)) + " 小时），本次不判失败");
-          '
+          if [ "${age_h%.*}" -ge 24 ]; then
+            echo "REFUSED: tag 已 ${age_h} 小时，search 面仍是 ${got:-空}——客户端目录里可能根本找不到它"
+            exit 1
+          fi
+          echo "24 小时窗口内（tag 年龄 ${age_h}h），索引滞后不算失败"

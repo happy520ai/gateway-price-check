@@ -112,39 +112,34 @@ jobs:
       - name: Read the server back out of the registry
         run: |
           set -euo pipefail
-          body=$(curl -sS "https://registry.modelcontextprotocol.io/v0/servers?search=gateway-price")
+          # 权威读回面（版本列表），不是 ?search= 那个缓存：实测 search 在 0.5.6/0.5.7 发布后
+          # 一个多小时仍返回 0.5.4，而这个路由立刻返回 0.5.7。
+          # 注意 name 里的斜杠必须编码成 %2F，否则路径被多切一段 ⇒ 404。
+          body=$(curl -sS "https://registry.modelcontextprotocol.io/v0/servers/io.github.happy520ai%2Fgateway-price-check/versions")
           printf '%s' "$body" > reg.json
           node -e '
             const fs = require("fs");
             const j = JSON.parse(fs.readFileSync("reg.json", "utf8"));
-            const s = (j.servers || []).map(x => x.server).find(x => x.name === "io.github.happy520ai/gateway-price-check");
-            if (!s) throw new Error("REFUSED: 注册表搜索里根本没有这个条目");
-            const p = (s.packages || [])[0];
-            if (!p || p.registryType !== "mcpb") throw new Error("REFUSED: 条目里没有 mcpb 包项");
+            const vs = (j.servers || []).map(x => x.server || x).filter(Boolean);
+            if (vs.length === 0) throw new Error("REFUSED: 权威路由里这个条目没有任何版本");
+            const names = [...new Set(vs.map(v => v.name))];
+            if (names.length !== 1 || names[0] !== "io.github.happy520ai/gateway-price-check")
+              throw new Error("REFUSED: 返回的条目名不对：" + names.join(","));
+            const want = (process.env.GPC_REF || "").replace(/^v/, "");
+            const found = vs.find(v => v.version === want);
+            if (!found) throw new Error("REFUSED: 在册版本里没有 " + want + "（现有：" + vs.map(v => v.version).join(",") + "）");
+            const p = (found.packages || [])[0];
+            if (!p || p.registryType !== "mcpb") throw new Error("REFUSED: 该版本没有 mcpb 包项");
             if (!String(p.identifier).includes("mcp")) throw new Error("REFUSED: identifier 里没有 mcp");
             if (!/^[0-9a-f]{64}$/.test(p.fileSha256 || "")) throw new Error("REFUSED: fileSha256 形状不对");
             fs.writeFileSync("asset-url.txt", p.identifier);
             fs.writeFileSync("want-sha.txt", p.fileSha256);
-            console.log("在册（索引版本 " + s.version + "，本次推的是 " + process.env.GPC_REF + "）");
+            console.log("在册 version=" + found.version + "（该条目共 " + vs.length + " 个版本）transport=" + (p.transport && p.transport.type));
           '
           url=$(cat asset-url.txt)
           served=$(curl -sSL "$url" | sha256sum | cut -d' ' -f1)
           echo "served=$served"
           [ "$served" = "$(cat want-sha.txt)" ] || { echo "REFUSED: 注册表指向的 sha 与服务端真字节不一致"; exit 1; }
-          echo "REGISTRY READBACK OK: 条目在册，且它宣称的 sha 就是现在能下载到的那串字节"
+          echo "REGISTRY VERIFIED: 本次版本在册，且它宣称的 sha 就是现在能下载到的那串字节"
         env:
           GPC_REF: ${{ github.ref_name }}
-
-      # 版本是否已在读回面上生效，交给每日核对作业；这里只留一条肉眼可读的提示。
-      - name: Note the index lag
-        run: |
-          echo "注册表索引通常滞后数分钟到数小时；verify-registry.yml 每天核对："
-          echo "  GET /v0/servers?search=gateway-price 的 version 应 >= 最新 release 的 server.json.version"
-          # 最后一道：注册表声称的 sha，必须等于此刻从公开 URL 真能下下来的那串字节。
-          url=$(cat asset-url.txt)
-          served=$(curl -sSL "$url" | sha256sum | cut -d' ' -f1)
-          echo "served=$served"
-          [ "$served" = "$(cat want-sha.txt)" ] || { echo "REFUSED: 注册表里的 sha 与服务端字节不一致（条目指向旧包）"; exit 1; }
-          echo "REGISTRY VERIFIED: 在册、版本对、sha 对得上真实字节"
-        env:
-          GPC_WANT: ${{ github.ref_name }}

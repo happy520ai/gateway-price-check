@@ -83,6 +83,15 @@ node src/cli.mjs --url https://your-gateway.example/v1 --name mine
 
 ## 给 AI 助手用：MCP 服务端（stdio）
 
+也在**官方 MCP Registry** 里：`io.github.happy520ai/gateway-price-check`（包是 `.mcpb`，stdio / node 运行时）。
+在支持注册表的客户端里可以直接搜这个名字；核对用权威路由：
+
+```
+curl -s https://registry.modelcontextprotocol.io/v0/servers/io.github.happy520ai%2Fgateway-price-check/versions
+```
+
+（命名空间里有斜杠，必须编码成 `%2F`；`?search=` 那个面是缓存——0.5.6/0.5.7 发布后十几分钟，它仍返回 0.5.4。）
+
 同一个测量，另一个入口。宿主是语言模型时，"能不能看价格"这个问题就变成它可以自己回答的事：
 
 ```json

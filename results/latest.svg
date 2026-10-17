@@ -8,15 +8,15 @@
 <text x="40" y="100" fill="#eceef3" font-size="16" font-weight="600">Vercel AI Gateway</text>
 <rect x="340" y="85" width="484" height="20" rx="6" fill="#12161c" stroke="#242c36"/>
 <rect x="340" y="85" width="469.7" height="20" rx="6" fill="#4ee1a0"/>
-<text x="836" y="100" fill="#4ee1a0" font-size="15" font-weight="700">459/473</text>
+<text x="836" y="100" fill="#4ee1a0" font-size="15" font-weight="700">460/474</text>
 <text x="40" y="134" fill="#eceef3" font-size="16" font-weight="600">OpenRouter</text>
 <rect x="340" y="119" width="484" height="20" rx="6" fill="#12161c" stroke="#242c36"/>
 <rect x="340" y="119" width="484.0" height="20" rx="6" fill="#4ee1a0"/>
-<text x="836" y="134" fill="#4ee1a0" font-size="15" font-weight="700">467/467</text>
+<text x="836" y="134" fill="#4ee1a0" font-size="15" font-weight="700">469/469</text>
 <text x="40" y="168" fill="#eceef3" font-size="16" font-weight="600">OpenCSG</text>
 <rect x="340" y="153" width="484" height="20" rx="6" fill="#12161c" stroke="#242c36"/>
-<rect x="340" y="153" width="441.9" height="20" rx="6" fill="#4ee1a0"/>
-<text x="836" y="168" fill="#4ee1a0" font-size="15" font-weight="700">21/23</text>
+<rect x="340" y="153" width="409.5" height="20" rx="6" fill="#4ee1a0"/>
+<text x="836" y="168" fill="#4ee1a0" font-size="15" font-weight="700">11/13</text>
 <text x="40" y="202" fill="#eceef3" font-size="16" font-weight="600">NVIDIA NIM</text>
 <rect x="340" y="187" width="484" height="20" rx="6" fill="#12161c" stroke="#242c36"/>
 <text x="836" y="202" fill="#ffb454" font-size="15" font-weight="700">0/81</text>

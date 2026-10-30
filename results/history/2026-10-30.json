@@ -1,0 +1,134 @@
+{
+  "as_of": "2026-10-30",
+  "as_of_tz": "UTC+08:00",
+  "as_of_utc": "2026-10-30T07:03:25.065Z",
+  "note": "全部为无鉴权 GET；本工具不发送任何对话请求，因此不评估模型保真度。",
+  "results": [
+    {
+      "name": "OpenCSG",
+      "url": "https://ai.space.opencsg.com/v1/models",
+      "ms": 1130,
+      "level": "YES",
+      "verdict": "20/22 条公布价格（91%） · 带显式币种字段 · 含缓存价 · 含上游仓库标识",
+      "total": 22,
+      "listShape": true,
+      "inputPriced": 17,
+      "anyPriced": 20,
+      "hasPricing": 20,
+      "cache": 11,
+      "currency": 20,
+      "upstream": 14,
+      "pricedButUnparsed": 0,
+      "unrecognizedKeys": []
+    },
+    {
+      "name": "OpenRouter",
+      "url": "https://openrouter.ai/api/v1/models",
+      "ms": 111,
+      "level": "YES",
+      "verdict": "456/456 条公布价格（100%） · 含缓存价 · 含上游仓库标识",
+      "total": 456,
+      "listShape": false,
+      "inputPriced": 456,
+      "anyPriced": 456,
+      "hasPricing": 456,
+      "cache": 312,
+      "currency": 0,
+      "upstream": 456,
+      "pricedButUnparsed": 0,
+      "unrecognizedKeys": []
+    },
+    {
+      "name": "Vercel AI Gateway",
+      "url": "https://ai-gateway.vercel.sh/v1/models",
+      "ms": 122,
+      "level": "YES",
+      "verdict": "485/500 条公布价格（97%） · 含缓存价 · 注：64 条的价格键不在词表内（video_duration_pricing, image, image_dimension_quality_pricing…）——它们计入\"公布价格\"列，但我没解析出数值",
+      "total": 500,
+      "listShape": true,
+      "inputPriced": 0,
+      "anyPriced": 421,
+      "hasPricing": 485,
+      "cache": 281,
+      "currency": 0,
+      "upstream": 0,
+      "pricedButUnparsed": 64,
+      "unrecognizedKeys": [
+        "video_duration_pricing",
+        "image",
+        "image_dimension_quality_pricing",
+        "video_token_pricing",
+        "speech_output_cost_per_second",
+        "web_search",
+        "realtime_session_duration_cost_per_second",
+        "realtime_client_message_cost"
+      ]
+    },
+    {
+      "name": "NVIDIA NIM",
+      "url": "https://integrate.api.nvidia.com/v1/models",
+      "ms": 149,
+      "level": "NO",
+      "verdict": "免登录清单里没有任何价格字段",
+      "total": 85,
+      "listShape": true,
+      "inputPriced": 0,
+      "anyPriced": 0,
+      "hasPricing": 0,
+      "cache": 0,
+      "currency": 0,
+      "upstream": 0,
+      "pricedButUnparsed": 0,
+      "unrecognizedKeys": []
+    },
+    {
+      "name": "OpenAI",
+      "url": "https://api.openai.com/v1/models",
+      "ms": 105,
+      "level": "AUTH",
+      "verdict": "需要 key 才能读清单（HTTP 401）——对\"免登录可见价格\"这个问题，这就是否"
+    },
+    {
+      "name": "DeepSeek",
+      "url": "https://api.deepseek.com/models",
+      "ms": 357,
+      "level": "AUTH",
+      "verdict": "需要 key 才能读清单（HTTP 401）——对\"免登录可见价格\"这个问题，这就是否"
+    },
+    {
+      "name": "SiliconFlow 硅基流动",
+      "url": "https://api.siliconflow.cn/v1/models",
+      "ms": 933,
+      "level": "AUTH",
+      "verdict": "需要 key 才能读清单（HTTP 401）——对\"免登录可见价格\"这个问题，这就是否"
+    },
+    {
+      "name": "Alibaba DashScope 百炼",
+      "url": "https://dashscope.aliyuncs.com/compatible-mode/v1/models",
+      "ms": 905,
+      "level": "AUTH",
+      "verdict": "需要 key 才能读清单（HTTP 401）——对\"免登录可见价格\"这个问题，这就是否"
+    },
+    {
+      "name": "Volcengine Ark 火山方舟",
+      "url": "https://ark.cn-beijing.volces.com/api/v3/models",
+      "ms": 1671,
+      "level": "AUTH",
+      "verdict": "需要 key 才能读清单（HTTP 401）——对\"免登录可见价格\"这个问题，这就是否"
+    },
+    {
+      "name": "Zhipu 智谱",
+      "url": "https://open.bigmodel.cn/api/paas/v4/models",
+      "ms": 554,
+      "level": "AUTH",
+      "verdict": "需要 key 才能读清单（HTTP 401）——对\"免登录可见价格\"这个问题，这就是否"
+    },
+    {
+      "name": "MiniMax",
+      "url": "https://api.minimax.chat/v1/models",
+      "ms": 896,
+      "level": "AUTH",
+      "verdict": "需要 key 才能读清单（HTTP 401）——对\"免登录可见价格\"这个问题，这就是否"
+    }
+  ]
+}

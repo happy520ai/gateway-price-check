@@ -1,22 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 548" width="960" height="548" role="img" font-family="system-ui,-apple-system,'Segoe UI','Microsoft YaHei',sans-serif">
 <title>11 家模型网关：注册之前谁能看到价格</title>
-<desc>读数由 CI 每日生成于 2026-10-30（UTC+08:00）。每家一次无鉴权 GET /v1/models。公布价格 3 家，清单公开但零价格 1 家，需 key 才能读清单 7 家。</desc>
+<desc>读数由 CI 每日生成于 2026-10-31（UTC+08:00）。每家一次无鉴权 GET /v1/models。公布价格 3 家，清单公开但零价格 1 家，需 key 才能读清单 7 家。</desc>
 <rect width="960" height="548" fill="#0b0d10"/>
 <rect width="960" height="6" fill="#4ee1a0"/>
 <text x="40" y="40" fill="#eceef3" font-size="24" font-weight="700">11 家模型网关：注册之前，谁能看到价格？</text>
-<text x="40" y="63" fill="#96a0af" font-size="13">每家一次无鉴权 GET /v1/models　·　CI 每日重跑，非手抄　·　2026-10-30 UTC+08:00</text>
+<text x="40" y="63" fill="#96a0af" font-size="13">每家一次无鉴权 GET /v1/models　·　CI 每日重跑，非手抄　·　2026-10-31 UTC+08:00</text>
 <text x="40" y="100" fill="#eceef3" font-size="16" font-weight="600">Vercel AI Gateway</text>
 <rect x="340" y="85" width="484" height="20" rx="6" fill="#12161c" stroke="#242c36"/>
 <rect x="340" y="85" width="469.5" height="20" rx="6" fill="#4ee1a0"/>
-<text x="836" y="100" fill="#4ee1a0" font-size="15" font-weight="700">485/500</text>
+<text x="836" y="100" fill="#4ee1a0" font-size="15" font-weight="700">484/499</text>
 <text x="40" y="134" fill="#eceef3" font-size="16" font-weight="600">OpenRouter</text>
 <rect x="340" y="119" width="484" height="20" rx="6" fill="#12161c" stroke="#242c36"/>
 <rect x="340" y="119" width="484.0" height="20" rx="6" fill="#4ee1a0"/>
 <text x="836" y="134" fill="#4ee1a0" font-size="15" font-weight="700">456/456</text>
 <text x="40" y="168" fill="#eceef3" font-size="16" font-weight="600">OpenCSG</text>
 <rect x="340" y="153" width="484" height="20" rx="6" fill="#12161c" stroke="#242c36"/>
-<rect x="340" y="153" width="440.0" height="20" rx="6" fill="#4ee1a0"/>
-<text x="836" y="168" fill="#4ee1a0" font-size="15" font-weight="700">20/22</text>
+<rect x="340" y="153" width="437.9" height="20" rx="6" fill="#4ee1a0"/>
+<text x="836" y="168" fill="#4ee1a0" font-size="15" font-weight="700">19/21</text>
 <text x="40" y="202" fill="#eceef3" font-size="16" font-weight="600">NVIDIA NIM</text>
 <rect x="340" y="187" width="484" height="20" rx="6" fill="#12161c" stroke="#242c36"/>
 <text x="836" y="202" fill="#ffb454" font-size="15" font-weight="700">0/85</text>

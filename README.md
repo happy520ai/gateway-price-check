@@ -34,7 +34,7 @@ node src/cli.mjs --url https://your-gateway.example/v1 --name mine
 
 | 判词 | 家数 | 是谁 |
 |---|---|---|
-| `YES` 免登录就公布价格 | **3** | OpenCSG 20/22 · OpenRouter 456/456 · Vercel AI Gateway 485/500 |
+| `YES` 免登录就公布价格 | **3** | OpenCSG 19/21 · OpenRouter 456/456 · Vercel AI Gateway 484/499 |
 | `NO` 清单公开但一个价都不标 | **1** | NVIDIA NIM 0/85 |
 | `AUTH` 不注册连清单都看不到（401） | **7** | OpenAI · DeepSeek · SiliconFlow 硅基流动 · Alibaba DashScope 百炼 · Volcengine Ark 火山方舟 · Zhipu 智谱 · MiniMax |
 
@@ -156,6 +156,6 @@ node --test
 本仓库作者维护一个 [OpenCSG 价格实测页](https://happy520ai.github.io/opencsg-model-pricing/)，
 那个页面带个人邀请码，有人经它注册我会拿到平台奖励。本工具与那份利益关系**保持隔离**：
 默认配置里两个服务商是并列摆放的，而上面那张表里 **OpenRouter 的透明度读数比 OpenCSG 更高**
-（456/456 带价 vs 20/22）。如果这个工具只对某一家说好话，它就没有存在价值。
+（456/456 带价 vs 19/21）。如果这个工具只对某一家说好话，它就没有存在价值。
 
 MIT。

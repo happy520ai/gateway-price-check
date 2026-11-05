@@ -34,7 +34,7 @@ node src/cli.mjs --url https://your-gateway.example/v1 --name mine
 
 | 判词 | 家数 | 是谁 |
 |---|---|---|
-| `YES` 免登录就公布价格 | **3** | OpenCSG 19/21 · OpenRouter 455/455 · Vercel AI Gateway 483/498 |
+| `YES` 免登录就公布价格 | **3** | OpenCSG 19/21 · OpenRouter 455/455 · Vercel AI Gateway 484/499 |
 | `NO` 清单公开但一个价都不标 | **1** | NVIDIA NIM 0/85 |
 | `AUTH` 不注册连清单都看不到（401） | **7** | OpenAI · DeepSeek · SiliconFlow 硅基流动 · Alibaba DashScope 百炼 · Volcengine Ark 火山方舟 · Zhipu 智谱 · MiniMax |
 

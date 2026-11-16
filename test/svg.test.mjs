@@ -36,20 +36,50 @@ test('x/y 标注与读数一致，AUTH 家标 401', () => {
   }
 });
 
-test('图例三档家数=按 level 聚合，且三档之和等于总家数', () => {
+test('图例三档家数=按 level 聚合；不可判单独成档，不并进三档', () => {
   const count = lvl => doc.results.filter(r => r.level === lvl).length;
   const total = doc.results.length;
-  assert.equal(count('YES') + count('NO') + count('AUTH'), total,
-    '有 ERR/UNKNOWN 时图例三档之和 < 总家数，这张图不该按"三档=全部"出');
+  const others = doc.results.filter(r => !['YES', 'NO', 'AUTH'].includes(r.level));
+  // 三档之和 + 不可判数 = 总家数。不可判不得并进三档：并进去就等于替这些家
+  // 断言了"公布了/不公布"，而 ERR/UNKNOWN 的意思恰恰是判不出来。
+  assert.equal(count('YES') + count('NO') + count('AUTH') + others.length, total,
+    '三档 + 不可判 之和必须等于总家数');
   for (const [lvl, label] of [['YES', '免登录公布价格'],
     ['NO', '清单公开 · 零价格'],
     ['AUTH', '401 · 不注册看不到清单']]) {
     assert.ok(svg.includes(`● ${count(lvl)} 家 · ${xml(label)}`), `图例缺 ${lvl} 或家数不对`);
   }
+  if (others.length > 0) {
+    const kinds = [...new Set(others.map(r => r.level))].join('/');
+    assert.ok(svg.includes(`● ${others.length} 家 · 不可判（${xml(kinds)}）`),
+      '有不可判家时图例必须单列一档');
+  } else {
+    assert.ok(!svg.includes('不可判'), '没有不可判家时图例不该出现这一档');
+  }
 });
 
-test('文本元素总数 = 2+2N+3+2（漏一家就会红）', () => {
-  assert.equal((svg.match(/<text/g) || []).length, 2 + doc.results.length * 2 + 3 + 2);
+test('文本元素总数 = 2+2N+图例档数+2（漏一家就会红）', () => {
+  const legendTiers = 3 + (doc.results.some(r => !['YES', 'NO', 'AUTH'].includes(r.level)) ? 1 : 0);
+  assert.equal((svg.match(/<text/g) || []).length, 2 + doc.results.length * 2 + legendTiers + 2);
+});
+
+test('假靶：有一家不可判时，图例单列第四档，三档不被污染', () => {
+  // 这条走的是真实分支：11-15 的 CI 上 OpenAI 探测 fetch failed，图上多出一行灰条
+  // 而图例只有三档，两边说法打架。夹具把一家 YES 改成 ERR，验证第四档真的会出。
+  const bad = root + 'results/_err.json', out = root + 'results/_err.svg';
+  try {
+    const fixture = { ...doc, results: doc.results.map((r, i) => i === 0 ? { ...r, level: 'ERR', verdict: '不可判：fetch failed' } : r) };
+    writeFileSync(bad, JSON.stringify(fixture));
+    execFileSync('node', ['src/to-svg.mjs', 'results/_err.json', 'results/_err.svg'], { cwd: root, stdio: 'pipe' });
+    const outSvg = readFileSync(out, 'utf8');
+    assert.ok(outSvg.includes('● 1 家 · 不可判（ERR）'), '不可判家必须单列第四档');
+    // 三档家数各归各家：被改成 ERR 的那家不再算进 YES
+    const yes = fixture.results.filter(r => r.level === 'YES').length;
+    assert.ok(outSvg.includes(`● ${yes} 家 · 免登录公布价格`), 'YES 档家数必须减掉被改走的那家');
+  } finally {
+    rmSync(bad, { force: true });
+    rmSync(out, { force: true });
+  }
 });
 
 test('假靶：读数不足 5 行时拒绝出图，且不留旧文件', () => {

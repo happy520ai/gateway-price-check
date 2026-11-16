@@ -57,8 +57,20 @@ jobs:
           got=$(curl -sS "https://registry.modelcontextprotocol.io/v0/servers?search=gateway-price" | node -e '
             let s = ""; process.stdin.on("data", d => s += d).on("end", () => {
               const j = JSON.parse(s);
-              const x = (j.servers || []).map(y => y.server).find(z => (z.name || "").includes("gateway-price-check"));
-              process.stdout.write(x ? x.version : "");
+              // search 面按版本升序返回全部版本：取首条永远是最旧的 0.5.4，
+              // 与权威路由的 want 永远不等 —— 这不是索引滞后，是取值逻辑错误。
+              // _meta 挂在外层包装对象上，.map(y => y.server) 会把它丢掉，
+              // 所以先包成 {srv, meta} 再过滤。
+              const mine = (j.servers || [])
+                .map(y => ({ srv: y.server || {}, meta: (y._meta || {})["io.modelcontextprotocol.registry/official"] }))
+                .filter(y => (y.srv.name || "").includes("gateway-price-check"));
+              if (mine.length === 0) { process.stdout.write(""); return; }
+              const byLatest = mine.find(y => y.meta && y.meta.isLatest);
+              const byMax = mine.slice()
+                .sort((a, b) => String(a.srv.version).localeCompare(String(b.srv.version), undefined, { numeric: true }))
+                .pop();
+              const x = byLatest || byMax;
+              process.stdout.write(x ? x.srv.version : "");
             });
           ')
           echo "search 面返回：${got:-（无结果）}，想要 $want"

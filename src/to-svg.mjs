@@ -88,12 +88,21 @@ for (const lvl of ['YES', 'NO', 'AUTH']) {
   legend.push({ x: lx, t, lvl });
   lx += 24 + textW(t, 13);
 }
+// 不可判（ERR/UNKNOWN）不并进三档：并进去就等于替这些家断言了"公布/不公布"。
+// markdown 那一侧早就单独列了一行（to-markdown.mjs 的"不可判"行），这里跟上，
+// 否则图上多出一行灰条、图例却只有三档，两边说法打架。
+const others = sorted.filter(r => !['YES', 'NO', 'AUTH'].includes(r.level));
+if (others.length > 0) {
+  const t = `● ${others.length} 家 · 不可判（${[...new Set(others.map(r => r.level))].join('/')}）`;
+  legend.push({ x: lx, t, lvl: 'OTHER' });
+  lx += 24 + textW(t, 13);
+}
 if (lx - 24 > W - M) {
   console.error(`REFUSED: 图例横排估宽 ${Math.round(lx - 24 - M)}px，可用 ${W - 2 * M}px —— 重叠比少一行图例更糟`);
   process.exit(1);
 }
 for (const { x, t, lvl } of legend) {
-  parts.push(`<text x="${x}" y="${ly + 4}" fill="${COLOR[lvl]}" font-size="13">${esc(t)}</text>`);
+  parts.push(`<text x="${x}" y="${ly + 4}" fill="${COLOR[lvl] ?? '#96a0af'}" font-size="13">${esc(t)}</text>`);
 }
 parts.push(`<text x="${M}" y="${ly + 34}" fill="#ffb454" font-size="12.5">${esc(`这张图只回答「公布了什么」，不回答「给的是不是真权重」——不发送任何对话请求。`)}</text>`);
 parts.push(`<text x="${M}" y="${ly + 54}" fill="#96a0af" font-size="12.5">${esc(`重放：node src/cli.mjs　·　原始读数：results/latest.json　·　${hidden} 家在注册之前不给你看价格`)}</text>`);

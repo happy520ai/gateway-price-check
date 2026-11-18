@@ -72,7 +72,12 @@ test('假靶：有一家不可判时，图例单列第四档，三档不被污�
     writeFileSync(bad, JSON.stringify(fixture));
     execFileSync('node', ['src/to-svg.mjs', 'results/_err.json', 'results/_err.svg'], { cwd: root, stdio: 'pipe' });
     const outSvg = readFileSync(out, 'utf8');
-    assert.ok(outSvg.includes('● 1 家 · 不可判（ERR）'), '不可判家必须单列第四档');
+    // 家数按夹具实算，不写死：真实读数里本来就可能已有不可判家（11-17 就是），
+    // 写死 '1 家' 只是把这一天的数据焊进断言。
+    const others = fixture.results.filter(r => !['YES', 'NO', 'AUTH'].includes(r.level));
+    assert.ok(others.length >= 1, '夹具必须造出至少一家不可判');
+    const kinds = [...new Set(others.map(r => r.level))].join('/');
+    assert.ok(outSvg.includes(`● ${others.length} 家 · 不可判（${kinds}）`), '不可判家必须单列第四档');
     // 三档家数各归各家：被改成 ERR 的那家不再算进 YES
     const yes = fixture.results.filter(r => r.level === 'YES').length;
     assert.ok(outSvg.includes(`● ${yes} 家 · 免登录公布价格`), 'YES 档家数必须减掉被改走的那家');

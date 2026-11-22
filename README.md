@@ -36,8 +36,7 @@ node src/cli.mjs --url https://your-gateway.example/v1 --name mine
 |---|---|---|
 | `YES` 免登录就公布价格 | **3** | OpenCSG 19/21 · OpenRouter 476/476 · Vercel AI Gateway 503/517 |
 | `NO` 清单公开但一个价都不标 | **1** | NVIDIA NIM 0/33 |
-| `AUTH` 不注册连清单都看不到（401） | **6** | OpenAI · DeepSeek · SiliconFlow 硅基流动 · Alibaba DashScope 百炼 · Zhipu 智谱 · MiniMax |
-| 不可判（`ERR`） | 1 | Volcengine Ark 火山方舟 —— 这些家数不许并进上面三档的结论 |
+| `AUTH` 不注册连清单都看不到（401） | **7** | OpenAI · DeepSeek · SiliconFlow 硅基流动 · Alibaba DashScope 百炼 · Volcengine Ark 火山方舟 · Zhipu 智谱 · MiniMax |
 
 <!--READINGS:END-->
 
@@ -45,7 +44,7 @@ node src/cli.mjs --url https://your-gateway.example/v1 --name mine
 
 1. **11 家里只有 3 家免登录就给价格（27%）。** 所以"免登录能看价"既不是行业惯例，也不是某个品类的默认设置——
    任何拿它当独家卖点的文案都不该被相信。
-2. **它跟厂商大小无关。** NVIDIA 把清单公开却一个价都不标；六家一线与国产原厂连清单都要 key。
+2. **它跟厂商大小无关。** NVIDIA 把清单公开却一个价都不标；七家一线与国产原厂连清单都要 key。
    公开清单和公开价格是两件不同的事，混为一谈的探针会给出漂亮的假数据。
 3. 三家里只有 OpenCSG 的价格对象带显式 `currency` 字段并按「元/百万 token」报。
    **这是单位可读性差异，不是透明度差异**——透明度上 OpenRouter 是 476/476，比它更高。
